@@ -102,7 +102,7 @@ export default function App() {
   const totalKategoriItems = Object.values(kategoriStats).reduce((a: any, b: any) => a + b, 0) as number
   let currentPercent = 0
   
-  const gradientStops = Object.entries(kategoriStats).map(([nama, jumlah], idx) => {
+  const gradientStops = Object.entries(kategoriStats).map(([_, jumlah], idx) => {
     const percent = ((jumlah as number) / totalKategoriItems) * 100
     const start = currentPercent
     const end = currentPercent + percent

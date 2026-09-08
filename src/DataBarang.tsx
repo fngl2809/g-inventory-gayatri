@@ -19,7 +19,7 @@ export default function DataBarang() {
 
   const ambilData = async () => {
     setLoading(true)
-    const { data, error } = await supabase.from('barangs').select('*').order('id', { ascending: true })
+    const { data } = await supabase.from('barangs').select('*').order('id', { ascending: true })
     if (data) setBarangs(data)
     setLoading(false)
   }
