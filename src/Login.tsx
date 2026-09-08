@@ -113,7 +113,7 @@ export default function Login({ onLoginSuccess }: { onLoginSuccess: () => void }
               {!isLogin && (
                 <div className="mb-5">
                   <label className="block text-white text-xs font-medium mb-2 uppercase tracking-wide">
-                    Email Asli
+                    Email
                   </label>
                   <input 
                     type="email" 

@@ -10,21 +10,15 @@ import Login from './Login'
 export default function App() {
   const [activeMenu, setActiveMenu] = useState('dashboard')
   const [session, setSession] = useState<any>(null)
-  const [showProfileMenu, setShowProfileMenu] = useState(false) // State baru untuk Dropdown Profil
+  const [showProfileMenu, setShowProfileMenu] = useState(false)
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session)
-    })
-    supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session)
-    })
+    supabase.auth.getSession().then(({ data: { session } }) => setSession(session))
+    supabase.auth.onAuthStateChange((_event, session) => setSession(session))
   }, [])
 
   const handleLogout = async () => {
-    if(window.confirm('Yakin ingin keluar dari sistem?')) {
-      await supabase.auth.signOut()
-    }
+    if(window.confirm('Yakin ingin keluar dari sistem?')) await supabase.auth.signOut()
   }
 
   const handleDeleteAccount = () => {
@@ -39,15 +33,20 @@ export default function App() {
   const [aktivitas, setAktivitas] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(true)
 
+  // Ambil nama bulan saat ini untuk UI
+  const bulanSekarang = new Date().toLocaleString('id-ID', { month: 'long', year: 'numeric' })
+
   useEffect(() => {
-    if (activeMenu === 'dashboard') {
-      ambilDataDashboard()
-    }
+    if (activeMenu === 'dashboard') ambilDataDashboard()
   }, [activeMenu])
 
   const ambilDataDashboard = async () => {
     setIsLoading(true)
     try {
+      const dateNow = new Date()
+      const currentMonth = dateNow.getMonth()
+      const currentYear = dateNow.getFullYear()
+
       const { data: barangs } = await supabase.from('barangs').select('*')
       let tJenis = 0; let tStok = 0; let kateg: any = {}; let menipis: any[] = [];
       
@@ -57,10 +56,7 @@ export default function App() {
           tStok += (b.stok || 0)
           const kat = (b.kategori || 'Lainnya').trim()
           kateg[kat] = (kateg[kat] || 0) + 1
-          
-          if (b.stok <= (b.stok_minimum || 5)) {
-            menipis.push(b)
-          }
+          if (b.stok <= (b.stok_minimum || 5)) menipis.push(b)
         })
         menipis.sort((a, b) => a.stok - b.stok)
         setStokMenipis(menipis.slice(0, 4))
@@ -68,16 +64,26 @@ export default function App() {
       }
 
       const { data: masuk } = await supabase.from('barang_masuk').select('*').order('created_at', { ascending: false })
-      let tMasuk = 0; let actMasuk: any[] = [];
+      let tMasukBulanan = 0; let actMasuk: any[] = [];
       if (masuk) {
-        masuk.forEach(m => tMasuk += (m.jumlah || 0))
+        masuk.forEach(m => {
+          const mDate = new Date(m.created_at)
+          if(mDate.getMonth() === currentMonth && mDate.getFullYear() === currentYear) {
+            tMasukBulanan += (m.jumlah || 0)
+          }
+        })
         actMasuk = masuk.slice(0, 5).map(m => ({ ...m, tipe: 'Masuk' }))
       }
 
       const { data: keluar } = await supabase.from('barang_keluar').select('*').order('created_at', { ascending: false })
-      let tKeluar = 0; let actKeluar: any[] = [];
+      let tKeluarBulanan = 0; let actKeluar: any[] = [];
       if (keluar) {
-        keluar.forEach(k => tKeluar += (k.jumlah || 0))
+        keluar.forEach(k => {
+          const kDate = new Date(k.created_at)
+          if(kDate.getMonth() === currentMonth && kDate.getFullYear() === currentYear) {
+            tKeluarBulanan += (k.jumlah || 0)
+          }
+        })
         actKeluar = keluar.slice(0, 5).map(k => ({ ...k, tipe: 'Keluar' }))
       }
 
@@ -85,7 +91,7 @@ export default function App() {
         .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
         .slice(0, 4)
 
-      setStats({ totalJenis: tJenis, totalStok: tStok, totalMasuk: tMasuk, totalKeluar: tKeluar })
+      setStats({ totalJenis: tJenis, totalStok: tStok, totalMasuk: tMasukBulanan, totalKeluar: tKeluarBulanan })
       setAktivitas(gabunganAct)
     } catch (error) {
       console.error("Gagal mengambil data dashboard:", error)
@@ -115,18 +121,12 @@ export default function App() {
       ) : (
         <div className="flex h-screen bg-[#F4F7FC] font-sans antialiased text-slate-800">
           
-          {/* SIDEBAR (Logout Sudah Dihapus & Logo Diperbarui) */}
+          {/* SIDEBAR */}
           <aside className="w-64 bg-[#394059] text-white flex flex-col justify-between shadow-xl flex-shrink-0">
-            <div>
+            <div className="flex flex-col h-full">
               <div className="py-6 px-4 border-b border-white/10 flex flex-col justify-center items-center min-h-[150px] gap-1">
-                <img 
-                  src="/logo.png" 
-                  alt="Logo G-Access" 
-                  className="w-44 h-auto object-contain drop-shadow-md mb-3" 
-                  onError={(e) => { e.currentTarget.style.display = 'none'; document.getElementById('fallback-text')!.style.display = 'block'; }} 
-                />
+                <img src="/logo.png" alt="Logo G-Access" className="w-44 h-auto object-contain drop-shadow-md mb-3" onError={(e) => { e.currentTarget.style.display = 'none'; document.getElementById('fallback-text')!.style.display = 'block'; }} />
                 <h1 id="fallback-text" className="hidden font-extrabold text-2xl tracking-wider text-[#01BFD7] mb-2">G-ACCESS</h1>
-                
                 <div className="text-center flex flex-col items-center">
                   <h1 className="font-black text-sm text-[#01BFD7] tracking-widest uppercase mb-1.5">G-Inventory</h1>
                   <h2 className="font-bold text-[10px] text-white tracking-widest uppercase leading-tight">PT. Gayatri Lintas Nusantara</h2>
@@ -134,37 +134,34 @@ export default function App() {
                 </div>
               </div>
 
-              <nav className="p-4 space-y-1 text-sm font-medium">
-                <button onClick={() => setActiveMenu('dashboard')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition ${activeMenu === 'dashboard' ? 'bg-[#01BFD7] text-white shadow-md shadow-[#01BFD7]/30' : 'text-slate-300 hover:bg-white/10'}`}><span>🏠</span> Dashboard</button>
-                <button onClick={() => setActiveMenu('barang')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition ${activeMenu === 'barang' ? 'bg-[#01BFD7] text-white shadow-md shadow-[#01BFD7]/30' : 'text-slate-300 hover:bg-white/10'}`}><span>📦</span> Data Barang</button>
-                <button onClick={() => setActiveMenu('masuk')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition ${activeMenu === 'masuk' ? 'bg-[#01BFD7] text-white shadow-md shadow-[#01BFD7]/30' : 'text-slate-300 hover:bg-white/10'}`}><span>📥</span> Barang Masuk</button>
-                <button onClick={() => setActiveMenu('keluar')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition ${activeMenu === 'keluar' ? 'bg-[#01BFD7] text-white shadow-md shadow-[#01BFD7]/30' : 'text-slate-300 hover:bg-white/10'}`}><span>📤</span> Barang Keluar</button>
-                <button onClick={() => setActiveMenu('minimum')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition ${activeMenu === 'minimum' ? 'bg-[#01BFD7] text-white shadow-md shadow-[#01BFD7]/30' : 'text-slate-300 hover:bg-white/10'}`}><span>⚠️</span> Stok Minimum</button>
-                <button onClick={() => setActiveMenu('laporan')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition ${activeMenu === 'laporan' ? 'bg-[#01BFD7] text-white shadow-md shadow-[#01BFD7]/30' : 'text-slate-300 hover:bg-white/10'}`}><span>📄</span> Laporan</button>
+              <nav className="p-4 space-y-1.5 text-sm font-medium flex-1 overflow-y-auto">
+                <button onClick={() => setActiveMenu('dashboard')} className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl transition ${activeMenu === 'dashboard' ? 'bg-[#01BFD7] text-white' : 'text-slate-300 hover:bg-white/10'}`}><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg> Dashboard</button>
+                <button onClick={() => setActiveMenu('barang')} className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl transition ${activeMenu === 'barang' ? 'bg-[#01BFD7] text-white' : 'text-slate-300 hover:bg-white/10'}`}><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg> Data Barang</button>
+                <button onClick={() => setActiveMenu('masuk')} className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl transition ${activeMenu === 'masuk' ? 'bg-[#01BFD7] text-white' : 'text-slate-300 hover:bg-white/10'}`}><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg> Barang Masuk</button>
+                <button onClick={() => setActiveMenu('keluar')} className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl transition ${activeMenu === 'keluar' ? 'bg-[#01BFD7] text-white' : 'text-slate-300 hover:bg-white/10'}`}><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg> Barang Keluar</button>
+                <button onClick={() => setActiveMenu('minimum')} className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl transition ${activeMenu === 'minimum' ? 'bg-[#01BFD7] text-white' : 'text-slate-300 hover:bg-white/10'}`}><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg> Stok Minimum</button>
+                <button onClick={() => setActiveMenu('laporan')} className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl transition ${activeMenu === 'laporan' ? 'bg-[#01BFD7] text-white' : 'text-slate-300 hover:bg-white/10'}`}><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg> Laporan</button>
               </nav>
+
+              <div className="p-4 border-t border-white/10 space-y-1.5">
+                <button onClick={handleLogout} className="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition text-rose-400 hover:bg-rose-500 hover:text-white font-medium text-sm"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg> Keluar</button>
+                <button onClick={handleDeleteAccount} className="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition text-slate-400 hover:bg-slate-700 hover:text-white font-medium text-sm"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg> Hapus Akun</button>
+              </div>
             </div>
-            <div className="p-4 border-t border-white/10 text-xs text-slate-400 text-center">© 2026 G-Access System</div>
           </aside>
 
           {/* KONTEN UTAMA */}
           <main className="flex-1 flex flex-col overflow-y-auto" onClick={() => showProfileMenu && setShowProfileMenu(false)}>
             
-            {/* HEADER ATAS (Dengan Menu Dropdown) */}
             <header className="bg-white border-b border-slate-200 px-8 py-4 flex items-center justify-between shadow-sm flex-shrink-0 relative z-40">
               <div>
-                <h2 className="text-xl font-bold text-[#394059] capitalize">Hai, {activeUsername} 👋</h2>
+                <h2 className="text-xl font-bold text-[#394059] capitalize">Hai, {activeUsername}</h2>
                 <p className="text-xs text-slate-400">Selamat datang di Sistem Informasi Stok Barang G-Access</p>
               </div>
               
-              {/* Profil & Dropdown */}
               <div className="relative">
-                <button 
-                  onClick={(e) => { e.stopPropagation(); setShowProfileMenu(!showProfileMenu); }}
-                  className="flex items-center gap-3 hover:bg-slate-50 p-2 rounded-xl transition"
-                >
-                  <div className="w-10 h-10 rounded-full bg-[#01BFD7]/10 text-[#01BFD7] font-bold flex items-center justify-center border border-[#01BFD7]/30 uppercase">
-                    {inisial}
-                  </div>
+                <button onClick={(e) => { e.stopPropagation(); setShowProfileMenu(!showProfileMenu); }} className="flex items-center gap-3 hover:bg-slate-50 p-2 rounded-xl transition cursor-pointer">
+                  <div className="w-10 h-10 rounded-full bg-[#01BFD7]/10 text-[#01BFD7] font-bold flex items-center justify-center border border-[#01BFD7]/30 uppercase">{inisial}</div>
                   <div className="text-right">
                     <p className="text-sm font-semibold text-[#394059] leading-none capitalize">{activeUsername}</p>
                     <span className="text-[11px] text-[#01BFD7]">Administrator</span>
@@ -172,16 +169,11 @@ export default function App() {
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-slate-400"><path d="m6 9 6 6 6-6"/></svg>
                 </button>
 
-                {/* Kotak Menu Muncul Saat Diklik */}
                 {showProfileMenu && (
                   <div className="absolute right-0 mt-2 w-48 bg-white border border-slate-100 rounded-xl shadow-xl py-2 z-50">
-                    <button onClick={handleLogout} className="w-full text-left px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 hover:text-[#01BFD7] flex items-center gap-3 transition">
-                      <span>🚪</span> Keluar
-                    </button>
+                    <button onClick={handleLogout} className="w-full text-left px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 hover:text-[#01BFD7] flex items-center gap-3 transition"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg> Keluar</button>
                     <div className="border-t border-slate-100 my-1"></div>
-                    <button onClick={handleDeleteAccount} className="w-full text-left px-4 py-2.5 text-sm font-medium text-rose-600 hover:bg-rose-50 flex items-center gap-3 transition">
-                      <span>🗑️</span> Hapus Akun
-                    </button>
+                    <button onClick={handleDeleteAccount} className="w-full text-left px-4 py-2.5 text-sm font-medium text-rose-600 hover:bg-rose-50 flex items-center gap-3 transition"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg> Hapus Akun</button>
                   </div>
                 )}
               </div>
@@ -195,44 +187,56 @@ export default function App() {
                 ) : (
                   <>
                     <div className="grid grid-cols-1 md:grid-cols-4 gap-5">
-                      <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm flex items-center gap-4 hover:shadow-md transition">
-                        <div className="w-14 h-14 rounded-2xl bg-[#01BFD7]/10 border border-[#01BFD7]/20 flex items-center justify-center text-2xl text-[#01BFD7]">📦</div>
+                      <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm flex items-start gap-4 hover:shadow-md transition">
+                        <div className="w-12 h-12 mt-1 rounded-xl bg-[#01BFD7]/10 flex items-center justify-center text-[#01BFD7] flex-shrink-0">
+                          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+                        </div>
                         <div>
-                          <span className="text-xs font-semibold text-[#01BFD7] uppercase tracking-wider">Total Jenis Barang</span>
-                          <div className="flex items-baseline gap-1 mt-1"><span className="text-2xl font-black text-[#394059]">{stats.totalJenis}</span><span className="text-xs text-slate-400">jenis</span></div>
+                          <span className="text-xs font-bold text-[#01BFD7] uppercase tracking-wider">Total Jenis Barang</span>
+                          <p className="text-[10px] text-slate-400 font-medium mb-1">Macam item terdaftar</p>
+                          <div className="flex items-baseline gap-1"><span className="text-2xl font-black text-[#394059]">{stats.totalJenis}</span><span className="text-xs font-semibold text-slate-400">jenis</span></div>
                         </div>
                       </div>
-                      <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm flex items-center gap-4 hover:shadow-md transition">
-                        <div className="w-14 h-14 rounded-2xl bg-[#46FF23]/10 border border-[#46FF23]/30 flex items-center justify-center text-2xl text-[#394059]">✅</div>
+                      <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm flex items-start gap-4 hover:shadow-md transition">
+                        <div className="w-12 h-12 mt-1 rounded-xl bg-[#46FF23]/10 flex items-center justify-center text-[#46FF23] flex-shrink-0">
+                           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                        </div>
                         <div>
-                          <span className="text-xs font-semibold text-[#394059] uppercase tracking-wider">Total Stok Tersedia</span>
-                          <div className="flex items-baseline gap-1 mt-1"><span className="text-2xl font-black text-[#394059]">{stats.totalStok}</span><span className="text-xs text-slate-400">unit</span></div>
+                          <span className="text-xs font-bold text-[#394059] uppercase tracking-wider">Total Stok Tersedia</span>
+                          <p className="text-[10px] text-slate-400 font-medium mb-1">Akumulasi fisik gudang</p>
+                          <div className="flex items-baseline gap-1"><span className="text-2xl font-black text-[#394059]">{stats.totalStok}</span><span className="text-xs font-semibold text-slate-400">unit</span></div>
                         </div>
                       </div>
-                      <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm flex items-center gap-4 hover:shadow-md transition">
-                        <div className="w-14 h-14 rounded-2xl bg-amber-50 border border-amber-200 flex items-center justify-center text-2xl text-amber-600">📥</div>
+                      <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm flex items-start gap-4 hover:shadow-md transition">
+                        <div className="w-12 h-12 mt-1 rounded-xl bg-amber-50 flex items-center justify-center text-amber-600 flex-shrink-0">
+                          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                        </div>
                         <div>
-                          <span className="text-xs font-semibold text-amber-600 uppercase tracking-wider">Barang Masuk</span>
-                          <div className="flex items-baseline gap-1 mt-1"><span className="text-2xl font-black text-[#394059]">{stats.totalMasuk}</span><span className="text-xs text-slate-400">unit</span></div>
+                          <span className="text-xs font-bold text-amber-600 uppercase tracking-wider">Barang Masuk</span>
+                          <p className="text-[10px] text-slate-400 font-medium mb-1">Periode {bulanSekarang}</p>
+                          <div className="flex items-baseline gap-1"><span className="text-2xl font-black text-[#394059]">{stats.totalMasuk}</span><span className="text-xs font-semibold text-slate-400">unit</span></div>
                         </div>
                       </div>
-                      <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm flex items-center gap-4 hover:shadow-md transition">
-                        <div className="w-14 h-14 rounded-2xl bg-rose-50 border border-rose-200 flex items-center justify-center text-2xl text-rose-600">📤</div>
+                      <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm flex items-start gap-4 hover:shadow-md transition">
+                        <div className="w-12 h-12 mt-1 rounded-xl bg-rose-50 flex items-center justify-center text-rose-600 flex-shrink-0">
+                          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                        </div>
                         <div>
-                          <span className="text-xs font-semibold text-rose-600 uppercase tracking-wider">Barang Keluar</span>
-                          <div className="flex items-baseline gap-1 mt-1"><span className="text-2xl font-black text-[#394059]">{stats.totalKeluar}</span><span className="text-xs text-slate-400">unit</span></div>
+                          <span className="text-xs font-bold text-rose-600 uppercase tracking-wider">Barang Keluar</span>
+                          <p className="text-[10px] text-slate-400 font-medium mb-1">Periode {bulanSekarang}</p>
+                          <div className="flex items-baseline gap-1"><span className="text-2xl font-black text-[#394059]">{stats.totalKeluar}</span><span className="text-xs font-semibold text-slate-400">unit</span></div>
                         </div>
                       </div>
                     </div>
 
                     <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
                       <div className="lg:col-span-5 bg-white rounded-2xl p-6 border border-slate-100 shadow-sm">
-                        <h3 className="text-base font-bold text-[#394059] flex items-center gap-2 mb-6"><span>📊</span> Stok per Kategori</h3>
+                        <h3 className="text-sm font-bold text-[#394059] flex items-center gap-2 mb-6">
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-[#01BFD7]"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"></path><path d="M22 12A10 10 0 0 0 12 2v10z"></path></svg> 
+                          Stok per Kategori
+                        </h3>
                         <div className="flex flex-col sm:flex-row items-center justify-around gap-6 py-4">
-                          <div 
-                            className="relative w-32 h-32 rounded-full flex items-center justify-center shadow-sm"
-                            style={{ background: `conic-gradient(${gradientStops || '#e2e8f0 0% 100%'})` }}
-                          >
+                          <div className="relative w-32 h-32 rounded-full flex items-center justify-center shadow-sm" style={{ background: `conic-gradient(${gradientStops || '#e2e8f0 0% 100%'})` }}>
                             <div className="absolute w-24 h-24 bg-white rounded-full"></div>
                             <div className="relative text-center z-10">
                               <p className="text-xl font-black text-[#394059]">{Object.keys(kategoriStats).length}</p>
@@ -255,13 +259,16 @@ export default function App() {
 
                       <div className="lg:col-span-7 bg-white rounded-2xl p-6 border border-slate-100 shadow-sm">
                         <div className="flex justify-between items-center mb-4">
-                          <h3 className="text-base font-bold text-[#394059] flex items-center gap-2"><span>🚨</span> Stok Menipis / Habis</h3>
+                          <h3 className="text-sm font-bold text-[#394059] flex items-center gap-2">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-amber-500"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+                            Stok Menipis / Habis
+                          </h3>
                           <button onClick={() => setActiveMenu('minimum')} className="text-xs text-[#01BFD7] font-semibold hover:underline">Lihat Semua</button>
                         </div>
                         <div className="overflow-x-auto">
                           <table className="w-full text-left text-xs text-slate-600">
                             <thead className="bg-[#F4F7FC] text-slate-400 uppercase text-[10px]">
-                              <tr><th className="py-2.5 px-3">Nama Barang</th><th className="py-2.5 px-3 text-center">Stok</th><th className="py-2.5 px-3 text-center">Minimum</th><th className="py-2.5 px-3 text-center">Status</th></tr>
+                              <tr><th className="py-2.5 px-3 rounded-l-lg">Nama Barang</th><th className="py-2.5 px-3 text-center">Stok Fisik</th><th className="py-2.5 px-3 text-center">Batas Minimum</th><th className="py-2.5 px-3 text-center rounded-r-lg">Status</th></tr>
                             </thead>
                             <tbody className="divide-y divide-slate-100 font-medium">
                               {stokMenipis.length === 0 ? (
@@ -286,13 +293,16 @@ export default function App() {
 
                     <div className="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm">
                       <div className="flex justify-between items-center mb-4">
-                        <h3 className="text-base font-bold text-[#394059] flex items-center gap-2"><span>🕒</span> Aktivitas Transaksi Terbaru</h3>
+                        <h3 className="text-sm font-bold text-[#394059] flex items-center gap-2">
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-emerald-500"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                          Aktivitas Transaksi Terbaru
+                        </h3>
                         <button onClick={() => setActiveMenu('laporan')} className="text-xs text-[#01BFD7] font-semibold hover:underline">Lihat Laporan</button>
                       </div>
                       <div className="overflow-x-auto">
                         <table className="w-full text-left text-xs text-slate-600">
                           <thead className="bg-[#F4F7FC] text-slate-400 uppercase text-[10px]">
-                            <tr><th className="py-3 px-4">Waktu</th><th className="py-3 px-4">Jenis</th><th className="py-3 px-4">Nama Barang</th><th className="py-3 px-4 text-center">Jumlah</th><th className="py-3 px-4">Keterangan</th></tr>
+                            <tr><th className="py-3 px-4 rounded-l-lg">Waktu</th><th className="py-3 px-4">Jenis</th><th className="py-3 px-4">Nama Barang</th><th className="py-3 px-4 text-center">Jumlah</th><th className="py-3 px-4 rounded-r-lg">Keterangan</th></tr>
                           </thead>
                           <tbody className="divide-y divide-slate-100 font-medium">
                             {aktivitas.length === 0 ? (

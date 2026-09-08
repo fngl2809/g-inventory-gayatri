@@ -69,7 +69,7 @@ export default function DataBarang() {
       <div className="print:hidden">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
           <div>
-            <h2 className="text-2xl font-bold text-[#394059] flex items-center gap-2">📦 Data Barang</h2>
+            <h2 className="text-2xl font-bold text-[#394059] flex items-center gap-2"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-[#01BFD7] mr-3 inline-block"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>Data Barang</h2>
             <p className="text-sm text-slate-500 mt-1">Kelola data barang inventaris G-Access</p>
           </div>
           
@@ -87,7 +87,11 @@ export default function DataBarang() {
               onClick={() => window.print()}
               className="w-full sm:w-auto bg-emerald-500 text-white px-5 py-2.5 rounded-xl text-sm font-bold hover:bg-emerald-600 shadow-md transition flex items-center justify-center gap-2"
             >
-              <span>🖨️</span> PDF
+              <span><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="mr-2 inline-block">
+  <polyline points="6 9 6 2 18 2 18 9"></polyline>
+  <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
+  <rect x="6" y="14" width="12" height="8"></rect>
+</svg></span> PDF
             </button>
             <button 
               onClick={() => { setFormData({ kode_barang: '', nama_barang: '', kategori: '', stok: 0, stok_minimum: 5, satuan: 'pcs', lokasi: '' }); setEditId(null); setShowForm(true); }}
@@ -131,8 +135,16 @@ export default function DataBarang() {
                       {item.stok <= 0 ? <span className="px-3 py-1 rounded-full text-xs font-bold bg-red-100 text-red-700">Habis</span> : item.stok <= (item.stok_minimum || 5) ? <span className="px-3 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-700">Menipis</span> : <span className="px-3 py-1 rounded-full text-xs font-bold bg-[#46FF23]/20 text-green-700">Aman</span>}
                     </td>
                     <td className="p-4 text-center flex justify-center gap-2">
-                      <button onClick={() => { setFormData(item); setEditId(item.id); setShowForm(true); }} className="text-amber-500 hover:text-amber-600">✏️</button>
-                      <button onClick={() => handleHapus(item.id)} className="text-rose-400 hover:text-rose-600">🗑️</button>
+                      <button onClick={() => { setFormData(item); setEditId(item.id); setShowForm(true); }} className="text-amber-500 hover:text-amber-600"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-slate-400 hover:text-amber-500 transition-colors">
+  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+</svg></button>
+                      <button onClick={() => handleHapus(item.id)} className="text-rose-400 hover:text-rose-600"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-slate-400 hover:text-rose-500 transition-colors">
+  <polyline points="3 6 5 6 21 6"></polyline>
+  <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+  <line x1="10" y1="11" x2="10" y2="17"></line>
+  <line x1="14" y1="11" x2="14" y2="17"></line>
+</svg></button>
                     </td>
                   </tr>
                 ))

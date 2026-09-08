@@ -22,7 +22,7 @@ export default function StokMinimum() {
   return (
     <div className="p-8">
       <div className="mb-6">
-        <h2 className="text-2xl font-bold text-[#394059]">⚠️ Pantauan Stok Minimum</h2>
+        <h2 className="text-2xl font-bold text-[#394059]"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-[#01BFD7] mr-3 inline-block"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg> Pantauan Stok Minimum</h2>
         <p className="text-sm text-slate-500 mt-1">Daftar barang inventaris yang perlu segera di-restok</p>
       </div>
 
