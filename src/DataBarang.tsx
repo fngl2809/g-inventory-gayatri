@@ -195,8 +195,8 @@ export default function DataBarang() {
                   <input type="text" className="w-full border border-slate-200 rounded-lg p-2.5 outline-none focus:border-[#01BFD7] text-sm uppercase" value={formData.kode_barang} onChange={(e) => setFormData({...formData, kode_barang: e.target.value.toUpperCase()})} />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-[#394059] mb-1">Kategori <span className="text-slate-400 font-normal">(Opsional)</span></label>
-                  <input type="text" className="w-full border border-slate-200 rounded-lg p-2.5 outline-none focus:border-[#01BFD7] text-sm uppercase" value={formData.kategori} onChange={(e) => setFormData({...formData, kategori: e.target.value.toUpperCase()})} />
+                  <label className="block text-xs font-bold text-[#394059] mb-1">Kategori</label>
+                  <input type="text" required className="w-full border border-slate-200 rounded-lg p-2.5 outline-none focus:border-[#01BFD7] text-sm uppercase" value={formData.kategori} onChange={(e) => setFormData({...formData, kategori: e.target.value.toUpperCase()})} />
                 </div>
               </div>
 
