@@ -65,24 +65,29 @@ export default function Login({ onLoginSuccess }: { onLoginSuccess: () => void }
 
       <div className="relative z-10 flex flex-col md:flex-row w-full min-h-screen">
         
-        {/* SISI KIRI: Branding Bersih */}
-        <div className="w-full md:w-1/2 flex flex-col justify-center items-center md:items-start text-center md:text-left p-8 md:pl-16 lg:pl-32 h-[40vh] md:h-screen">
+        {/* SISI KIRI: Branding (Sekarang Rata Tengah & Proporsional) */}
+        <div className="w-full md:w-1/2 flex flex-col justify-center items-center text-center p-8 md:pr-16 lg:pr-32 h-[40vh] md:h-screen">
           <img 
             src="/g-access-simbol.png" 
             alt="Logo G-Access" 
-            className="w-24 md:w-28 lg:w-32 mb-6 object-contain drop-shadow-md" 
+            className="w-28 md:w-32 lg:w-40 mb-8 object-contain drop-shadow-xl hover:scale-105 transition-transform duration-500" 
           />
-          <h1 className="text-3xl md:text-4xl lg:text-5xl font-black text-[#0c3966] tracking-wide uppercase mb-2">
+          
+          <h1 className="text-4xl lg:text-5xl font-black text-[#0c3966] tracking-widest uppercase mb-3">
             G-Inventory
           </h1>
-          <p className="text-slate-500 text-xs md:text-sm font-semibold tracking-wider uppercase mb-8">
+          
+          <p className="text-slate-500 text-xs lg:text-sm font-bold tracking-[0.2em] uppercase mb-12">
             Manajemen Inventaris & Stok Gudang
           </p>
-          <div className="mt-2">
-            <h2 className="text-xs font-bold text-[#0c3966] uppercase tracking-widest">
+          
+          {/* Info PT dengan Aksen Garis Cyan */}
+          <div className="flex flex-col items-center mt-2">
+            <div className="w-12 h-1 bg-[#01BFD7] rounded-full mb-5"></div>
+            <h2 className="text-xs lg:text-sm font-extrabold text-[#0c3966] uppercase tracking-[0.2em]">
               PT. Gayatri Lintas Nusantara
             </h2>
-            <p className="text-[10px] text-[#01BFD7] font-bold uppercase tracking-[0.2em] mt-1.5">
+            <p className="text-[10px] lg:text-xs text-[#01BFD7] font-bold uppercase tracking-[0.3em] mt-2">
               POP Pacitan
             </p>
           </div>
@@ -113,7 +118,7 @@ export default function Login({ onLoginSuccess }: { onLoginSuccess: () => void }
               {!isLogin && (
                 <div className="mb-5">
                   <label className="block text-white text-xs font-medium mb-2 uppercase tracking-wide">
-                    Email
+                    Email Asli
                   </label>
                   <input 
                     type="email" 
