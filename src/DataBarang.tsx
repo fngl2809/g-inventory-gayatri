@@ -92,46 +92,49 @@ export default function DataBarang() {
           </div>
         </div>
 
+        {/* BAGIAN TABEL YANG DIPERBAIKI UNTUK HP */}
         <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-          <table className="w-full text-left text-sm">
-            <thead className="bg-[#F4F7FC] text-slate-500 font-semibold border-b border-slate-100">
-              <tr>
-                <th className="p-4 text-center">No</th>
-                <th className="p-4">Kode Barang</th>
-                <th className="p-4">Nama Barang</th>
-                <th className="p-4">Kategori</th>
-                <th className="p-4 text-center">Stok</th>
-                <th className="p-4 text-center">Minimum</th>
-                <th className="p-4 text-center">Status</th>
-                <th className="p-4 text-center">Aksi</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {loading ? (
-                <tr><td colSpan={8} className="p-8 text-center text-slate-400">Memuat data...</td></tr>
-              ) : dataTampil.length === 0 ? (
-                <tr><td colSpan={8} className="p-8 text-center text-slate-500">Barang tidak ditemukan.</td></tr>
-              ) : (
-                dataTampil.map((item, index) => (
-                  <tr key={item.id} className="hover:bg-slate-50 transition">
-                    <td className="p-4 text-center text-slate-400">{index + 1}</td>
-                    <td className="p-4 font-bold text-[#01BFD7]">{item.kode_barang || '-'}</td>
-                    <td className="p-4 font-semibold text-[#394059]">{item.nama_barang}</td>
-                    <td className="p-4 text-slate-500">{item.kategori || '-'}</td>
-                    <td className="p-4 text-center font-black text-[#394059] text-base">{item.stok}</td>
-                    <td className="p-4 text-center text-slate-400">{item.stok_minimum || 5}</td>
-                    <td className="p-4 text-center">
-                      {item.stok <= 0 ? <span className="px-3 py-1 rounded-full text-xs font-bold bg-red-100 text-red-700">Habis</span> : item.stok <= (item.stok_minimum || 5) ? <span className="px-3 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-700">Menipis</span> : <span className="px-3 py-1 rounded-full text-xs font-bold bg-[#46FF23]/20 text-green-700">Aman</span>}
-                    </td>
-                    <td className="p-4 text-center flex justify-center gap-2">
-                      <button onClick={() => { setFormData(item); setEditId(item.id); setShowForm(true); }} className="text-amber-500 hover:text-amber-600"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-slate-400 hover:text-amber-500 transition-colors"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg></button>
-                      <button onClick={() => handleHapus(item.id)} className="text-rose-400 hover:text-rose-600"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-slate-400 hover:text-rose-500 transition-colors"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg></button>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+          <div className="overflow-x-auto w-full">
+            <table className="w-full text-left text-sm min-w-[800px]">
+              <thead className="bg-[#F4F7FC] text-slate-500 font-semibold border-b border-slate-100">
+                <tr>
+                  <th className="p-4 text-center">No</th>
+                  <th className="p-4">Kode Barang</th>
+                  <th className="p-4">Nama Barang</th>
+                  <th className="p-4">Kategori</th>
+                  <th className="p-4 text-center">Stok</th>
+                  <th className="p-4 text-center">Minimum</th>
+                  <th className="p-4 text-center">Status</th>
+                  <th className="p-4 text-center">Aksi</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {loading ? (
+                  <tr><td colSpan={8} className="p-8 text-center text-slate-400">Memuat data...</td></tr>
+                ) : dataTampil.length === 0 ? (
+                  <tr><td colSpan={8} className="p-8 text-center text-slate-500">Barang tidak ditemukan.</td></tr>
+                ) : (
+                  dataTampil.map((item, index) => (
+                    <tr key={item.id} className="hover:bg-slate-50 transition">
+                      <td className="p-4 text-center text-slate-400">{index + 1}</td>
+                      <td className="p-4 font-bold text-[#01BFD7]">{item.kode_barang || '-'}</td>
+                      <td className="p-4 font-semibold text-[#394059]">{item.nama_barang}</td>
+                      <td className="p-4 text-slate-500">{item.kategori || '-'}</td>
+                      <td className="p-4 text-center font-black text-[#394059] text-base">{item.stok}</td>
+                      <td className="p-4 text-center text-slate-400">{item.stok_minimum || 5}</td>
+                      <td className="p-4 text-center">
+                        {item.stok <= 0 ? <span className="px-3 py-1 rounded-full text-xs font-bold bg-red-100 text-red-700">Habis</span> : item.stok <= (item.stok_minimum || 5) ? <span className="px-3 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-700">Menipis</span> : <span className="px-3 py-1 rounded-full text-xs font-bold bg-[#46FF23]/20 text-green-700">Aman</span>}
+                      </td>
+                      <td className="p-4 text-center flex justify-center gap-2">
+                        <button onClick={() => { setFormData(item); setEditId(item.id); setShowForm(true); }} className="text-amber-500 hover:text-amber-600"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-slate-400 hover:text-amber-500 transition-colors"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg></button>
+                        <button onClick={() => handleHapus(item.id)} className="text-rose-400 hover:text-rose-600"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-slate-400 hover:text-rose-500 transition-colors"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg></button>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
 
@@ -144,7 +147,7 @@ export default function DataBarang() {
           <p className="text-sm text-black mb-3">Email: gayatripoppacitan@gmail.com</p>
           <p className="text-sm text-black font-semibold">Dicetak pada: {tanggalCetak}</p>
         </div>
-
+              
         <table className="w-full text-center text-sm border-collapse border border-black text-black mb-12">
           <thead>
             <tr className="bg-gray-100">

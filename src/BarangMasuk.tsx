@@ -91,43 +91,46 @@ export default function BarangMasuk() {
       </div>
 
       <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-        <table className="w-full text-left text-sm">
-          <thead className="bg-[#F4F7FC] text-slate-500 font-semibold border-b border-slate-100">
-            <tr>
-              <th className="p-4">Tanggal</th>
-              <th className="p-4">Kode</th>
-              <th className="p-4">Nama Barang</th>
-              <th className="p-4 text-center">Jumlah Masuk</th>
-              <th className="p-4">Keterangan</th>
-              <th className="p-4">Oleh</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-100">
-            {loading ? (
-              <tr><td colSpan={6} className="p-8 text-center text-slate-400">Memuat data transaksi...</td></tr>
-            ) : riwayatMasuk.length === 0 ? (
+        {/* TABEL DIBUNGKUS OVERFLOW UNTUK HP */}
+        <div className="overflow-x-auto w-full">
+          <table className="w-full text-left text-sm min-w-[800px]">
+            <thead className="bg-[#F4F7FC] text-slate-500 font-semibold border-b border-slate-100">
               <tr>
-                <td colSpan={6} className="p-8 text-center text-slate-500 bg-slate-50/50">
-                  <div className="text-3xl mb-2">📦</div> Belum ada riwayat barang masuk.
-                </td>
+                <th className="p-4">Tanggal</th>
+                <th className="p-4">Kode</th>
+                <th className="p-4">Nama Barang</th>
+                <th className="p-4 text-center">Jumlah Masuk</th>
+                <th className="p-4">Keterangan</th>
+                <th className="p-4">Oleh</th>
               </tr>
-            ) : (
-              riwayatMasuk.map((item) => {
-                const tgl = new Date(item.created_at).toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' })
-                return (
-                  <tr key={item.id} className="hover:bg-slate-50 transition">
-                    <td className="p-4 text-slate-500">{tgl}</td>
-                    <td className="p-4 font-bold text-[#01BFD7]">{item.kode_barang || '-'}</td>
-                    <td className="p-4 font-semibold text-[#394059]">{item.nama_barang}</td>
-                    <td className="p-4 text-center font-bold text-[#46FF23] text-base">+{item.jumlah}</td>
-                    <td className="p-4 text-slate-600">{item.keterangan || '-'}</td>
-                    <td className="p-4 text-slate-500 text-xs">{item.oleh}</td>
-                  </tr>
-                )
-              })
-            )}
-          </tbody>
-        </table>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {loading ? (
+                <tr><td colSpan={6} className="p-8 text-center text-slate-400">Memuat data transaksi...</td></tr>
+              ) : riwayatMasuk.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="p-8 text-center text-slate-500 bg-slate-50/50">
+                    <div className="text-3xl mb-2">📦</div> Belum ada riwayat barang masuk.
+                  </td>
+                </tr>
+              ) : (
+                riwayatMasuk.map((item) => {
+                  const tgl = new Date(item.created_at).toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' })
+                  return (
+                    <tr key={item.id} className="hover:bg-slate-50 transition">
+                      <td className="p-4 text-slate-500">{tgl}</td>
+                      <td className="p-4 font-bold text-[#01BFD7]">{item.kode_barang || '-'}</td>
+                      <td className="p-4 font-semibold text-[#394059]">{item.nama_barang}</td>
+                      <td className="p-4 text-center font-bold text-[#46FF23] text-base">+{item.jumlah}</td>
+                      <td className="p-4 text-slate-600">{item.keterangan || '-'}</td>
+                      <td className="p-4 text-slate-500 text-xs">{item.oleh}</td>
+                    </tr>
+                  )
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {showForm && (
