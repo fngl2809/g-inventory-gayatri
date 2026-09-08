@@ -27,50 +27,53 @@ export default function StokMinimum() {
       </div>
 
       <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-        <table className="w-full text-left text-sm">
-          <thead className="bg-[#F4F7FC] text-slate-500 font-semibold border-b border-slate-100">
-            <tr>
-              <th className="p-4 text-center">No</th>
-              <th className="p-4">Kode Barang</th>
-              <th className="p-4">Nama Barang</th>
-              <th className="p-4">Kategori</th>
-              <th className="p-4 text-center">Sisa Stok</th>
-              <th className="p-4 text-center">Batas Minimum</th>
-              <th className="p-4 text-center">Status Kritis</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-100">
-            {loading ? (
-              <tr><td colSpan={7} className="p-8 text-center text-slate-400">Memeriksa gudang...</td></tr>
-            ) : barangs.length === 0 ? (
+        {/* DIV PEMBUNGKUS UNTUK SCROLL HP */}
+        <div className="overflow-x-auto w-full">
+          <table className="w-full text-left text-sm min-w-[800px]">
+            <thead className="bg-[#F4F7FC] text-slate-500 font-semibold border-b border-slate-100">
               <tr>
-                <td colSpan={7} className="p-8 text-center text-slate-500 bg-emerald-50/50">
-                  <div className="text-4xl mb-3">✅</div>
-                  <h3 className="font-bold text-emerald-700 text-lg">Gudang Aman Terkendali!</h3>
-                  <p className="text-emerald-600/70">Tidak ada barang yang menipis atau habis saat ini.</p>
-                </td>
+                <th className="p-4 text-center">No</th>
+                <th className="p-4">Kode Barang</th>
+                <th className="p-4">Nama Barang</th>
+                <th className="p-4">Kategori</th>
+                <th className="p-4 text-center">Sisa Stok</th>
+                <th className="p-4 text-center">Batas Minimum</th>
+                <th className="p-4 text-center">Status Kritis</th>
               </tr>
-            ) : (
-              barangs.map((item, index) => (
-                <tr key={item.id} className="hover:bg-slate-50 transition">
-                  <td className="p-4 text-center font-medium text-slate-400">{index + 1}</td>
-                  <td className="p-4 font-bold text-[#01BFD7]">{item.kode_barang}</td>
-                  <td className="p-4 text-[#394059] font-semibold">{item.nama_barang}</td>
-                  <td className="p-4 text-slate-500">{item.kategori}</td>
-                  <td className="p-4 text-center font-black text-rose-500 text-lg">{item.stok}</td>
-                  <td className="p-4 text-center text-slate-500">{item.stok_minimum || 5}</td>
-                  <td className="p-4 text-center">
-                    {item.stok <= 0 ? (
-                      <span className="px-3 py-1.5 rounded-full text-xs font-bold bg-red-100 text-red-700 border border-red-200 shadow-sm">Habis Total</span>
-                    ) : (
-                      <span className="px-3 py-1.5 rounded-full text-xs font-bold bg-amber-100 text-amber-700 border border-amber-200 shadow-sm">Menipis</span>
-                    )}
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {loading ? (
+                <tr><td colSpan={7} className="p-8 text-center text-slate-400">Memeriksa gudang...</td></tr>
+              ) : barangs.length === 0 ? (
+                <tr>
+                  <td colSpan={7} className="p-8 text-center text-slate-500 bg-emerald-50/50">
+                    <div className="text-4xl mb-3">✅</div>
+                    <h3 className="font-bold text-emerald-700 text-lg">Gudang Aman Terkendali!</h3>
+                    <p className="text-emerald-600/70">Tidak ada barang yang menipis atau habis saat ini.</p>
                   </td>
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+              ) : (
+                barangs.map((item, index) => (
+                  <tr key={item.id} className="hover:bg-slate-50 transition">
+                    <td className="p-4 text-center font-medium text-slate-400">{index + 1}</td>
+                    <td className="p-4 font-bold text-[#01BFD7]">{item.kode_barang}</td>
+                    <td className="p-4 text-[#394059] font-semibold">{item.nama_barang}</td>
+                    <td className="p-4 text-slate-500">{item.kategori}</td>
+                    <td className="p-4 text-center font-black text-rose-500 text-lg">{item.stok}</td>
+                    <td className="p-4 text-center text-slate-500">{item.stok_minimum || 5}</td>
+                    <td className="p-4 text-center">
+                      {item.stok <= 0 ? (
+                        <span className="px-3 py-1.5 rounded-full text-xs font-bold bg-red-100 text-red-700 border border-red-200 shadow-sm">Habis Total</span>
+                      ) : (
+                        <span className="px-3 py-1.5 rounded-full text-xs font-bold bg-amber-100 text-amber-700 border border-amber-200 shadow-sm">Menipis</span>
+                      )}
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   )
