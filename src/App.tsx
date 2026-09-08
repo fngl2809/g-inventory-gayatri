@@ -36,8 +36,6 @@ export default function App() {
   const [aktivitas, setAktivitas] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(true)
 
-  const bulanSekarang = new Date().toLocaleString('id-ID', { month: 'long', year: 'numeric' })
-
   useEffect(() => {
     if (activeMenu === 'dashboard') ambilDataDashboard()
   }, [activeMenu])
