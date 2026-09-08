@@ -10,8 +10,8 @@ import Login from './Login'
 export default function App() {
   const [activeMenu, setActiveMenu] = useState('dashboard')
   const [session, setSession] = useState<any>(null)
+  const [showProfileMenu, setShowProfileMenu] = useState(false) // State baru untuk Dropdown Profil
 
-  // Cek status login saat aplikasi pertama kali dimuat
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session)
@@ -21,14 +21,18 @@ export default function App() {
     })
   }, [])
 
-  // FUNGSI LOGOUT
   const handleLogout = async () => {
     if(window.confirm('Yakin ingin keluar dari sistem?')) {
       await supabase.auth.signOut()
     }
   }
 
-  // --- STATE UNTUK DATA DASHBOARD ---
+  const handleDeleteAccount = () => {
+    if(window.confirm('PERINGATAN: Yakin ingin menghapus akun ini?')) {
+      alert('Sistem: Untuk menjaga riwayat transaksi gudang, penghapusan akun Admin hanya bisa dilakukan melalui Dashboard Supabase oleh Super Admin.')
+    }
+  }
+
   const [stats, setStats] = useState({ totalJenis: 0, totalStok: 0, totalMasuk: 0, totalKeluar: 0 })
   const [kategoriStats, setKategoriStats] = useState<any>({})
   const [stokMenipis, setStokMenipis] = useState<any[]>([])
@@ -101,59 +105,35 @@ export default function App() {
     return `${colorsHex[idx % colorsHex.length]} ${start}% ${end}%`
   }).join(', ')
 
-  // ========================================================
-  // Tarik data username dari sesi Supabase untuk ditampilkan
-  // ========================================================
   const activeUsername = session?.user?.user_metadata?.username || 'Admin'
   const inisial = activeUsername.substring(0, 2).toUpperCase()
 
-  // ==========================================
-  // BAGIAN RETURN YANG SUDAH DIBUNGKUS SESSION
-  // ==========================================
   return (
     <>
       {!session ? (
-        // JIKA BELUM LOGIN: Tampilkan Halaman Login
         <Login onLoginSuccess={() => console.log("Berhasil Login")} />
       ) : (
-        // JIKA SUDAH LOGIN: Tampilkan Dashboard G-Access
         <div className="flex h-screen bg-[#F4F7FC] font-sans antialiased text-slate-800">
           
-          {/* SIDEBAR */}
+          {/* SIDEBAR (Logout Sudah Dihapus & Logo Diperbarui) */}
           <aside className="w-64 bg-[#394059] text-white flex flex-col justify-between shadow-xl flex-shrink-0">
             <div>
               <div className="py-6 px-4 border-b border-white/10 flex flex-col justify-center items-center min-h-[150px] gap-1">
-                {/* Logo Gambar (Dibuat lebar menyesuaikan sidebar) */}
                 <img 
                   src="/logo.png" 
                   alt="Logo G-Access" 
                   className="w-44 h-auto object-contain drop-shadow-md mb-3" 
                   onError={(e) => { e.currentTarget.style.display = 'none'; document.getElementById('fallback-text')!.style.display = 'block'; }} 
                 />
+                <h1 id="fallback-text" className="hidden font-extrabold text-2xl tracking-wider text-[#01BFD7] mb-2">G-ACCESS</h1>
                 
-                {/* Fallback teks jika gambar tidak ditemukan */}
-                <h1 id="fallback-text" className="hidden font-extrabold text-2xl tracking-wider text-[#01BFD7] mb-2">
-                  G-ACCESS
-                </h1>
-                
-                {/* Teks Nama Web & Perusahaan di Bawah Logo */}
                 <div className="text-center flex flex-col items-center">
-                  {/* Nama Aplikasi */}
-                  <h1 className="font-black text-sm text-[#01BFD7] tracking-widest uppercase mb-1.5">
-                    G-Inventory
-                  </h1>
-                  
-                  {/* Nama Perusahaan */}
-                  <h2 className="font-bold text-[10px] text-white tracking-widest uppercase leading-tight">
-                    PT. Gayatri Lintas Nusantara
-                  </h2>
-                  
-                  {/* Lokasi */}
-                  <p className="text-[9px] text-slate-400 tracking-widest uppercase mt-1">
-                    POP Pacitan
-                  </p>
+                  <h1 className="font-black text-sm text-[#01BFD7] tracking-widest uppercase mb-1.5">G-Inventory</h1>
+                  <h2 className="font-bold text-[10px] text-white tracking-widest uppercase leading-tight">PT. Gayatri Lintas Nusantara</h2>
+                  <p className="text-[9px] text-slate-400 tracking-widest uppercase mt-1">POP Pacitan</p>
                 </div>
               </div>
+
               <nav className="p-4 space-y-1 text-sm font-medium">
                 <button onClick={() => setActiveMenu('dashboard')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition ${activeMenu === 'dashboard' ? 'bg-[#01BFD7] text-white shadow-md shadow-[#01BFD7]/30' : 'text-slate-300 hover:bg-white/10'}`}><span>🏠</span> Dashboard</button>
                 <button onClick={() => setActiveMenu('barang')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition ${activeMenu === 'barang' ? 'bg-[#01BFD7] text-white shadow-md shadow-[#01BFD7]/30' : 'text-slate-300 hover:bg-white/10'}`}><span>📦</span> Data Barang</button>
@@ -161,36 +141,53 @@ export default function App() {
                 <button onClick={() => setActiveMenu('keluar')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition ${activeMenu === 'keluar' ? 'bg-[#01BFD7] text-white shadow-md shadow-[#01BFD7]/30' : 'text-slate-300 hover:bg-white/10'}`}><span>📤</span> Barang Keluar</button>
                 <button onClick={() => setActiveMenu('minimum')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition ${activeMenu === 'minimum' ? 'bg-[#01BFD7] text-white shadow-md shadow-[#01BFD7]/30' : 'text-slate-300 hover:bg-white/10'}`}><span>⚠️</span> Stok Minimum</button>
                 <button onClick={() => setActiveMenu('laporan')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition ${activeMenu === 'laporan' ? 'bg-[#01BFD7] text-white shadow-md shadow-[#01BFD7]/30' : 'text-slate-300 hover:bg-white/10'}`}><span>📄</span> Laporan</button>
-                
-                {/* TOMBOL LOGOUT BARU */}
-                <div className="pt-4 mt-4 border-t border-white/10">
-                  <button onClick={handleLogout} className="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition text-rose-400 hover:bg-rose-500 hover:text-white">
-                    <span>🚪</span> Keluar (Logout)
-                  </button>
-                </div>
               </nav>
             </div>
             <div className="p-4 border-t border-white/10 text-xs text-slate-400 text-center">© 2026 G-Access System</div>
           </aside>
 
           {/* KONTEN UTAMA */}
-          <main className="flex-1 flex flex-col overflow-y-auto">
-          <header className="bg-white border-b border-slate-200 px-8 py-4 flex items-center justify-between shadow-sm flex-shrink-0">
-            <div>
-              <h2 className="text-xl font-bold text-[#394059] capitalize">Hai, {activeUsername} 👋</h2>
-              <p className="text-xs text-slate-400">Selamat datang di Sistem Informasi Stok Barang G-Access</p>
-            </div>
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-[#01BFD7]/10 text-[#01BFD7] font-bold flex items-center justify-center border border-[#01BFD7]/30 uppercase">
-                {inisial}
+          <main className="flex-1 flex flex-col overflow-y-auto" onClick={() => showProfileMenu && setShowProfileMenu(false)}>
+            
+            {/* HEADER ATAS (Dengan Menu Dropdown) */}
+            <header className="bg-white border-b border-slate-200 px-8 py-4 flex items-center justify-between shadow-sm flex-shrink-0 relative z-40">
+              <div>
+                <h2 className="text-xl font-bold text-[#394059] capitalize">Hai, {activeUsername} 👋</h2>
+                <p className="text-xs text-slate-400">Selamat datang di Sistem Informasi Stok Barang G-Access</p>
               </div>
-              <div className="text-right">
-                <p className="text-sm font-semibold text-[#394059] leading-none capitalize">{activeUsername}</p>
-                <span className="text-[11px] text-[#01BFD7]">Administrator</span>
-              </div>
-            </div>
-          </header>
+              
+              {/* Profil & Dropdown */}
+              <div className="relative">
+                <button 
+                  onClick={(e) => { e.stopPropagation(); setShowProfileMenu(!showProfileMenu); }}
+                  className="flex items-center gap-3 hover:bg-slate-50 p-2 rounded-xl transition"
+                >
+                  <div className="w-10 h-10 rounded-full bg-[#01BFD7]/10 text-[#01BFD7] font-bold flex items-center justify-center border border-[#01BFD7]/30 uppercase">
+                    {inisial}
+                  </div>
+                  <div className="text-right">
+                    <p className="text-sm font-semibold text-[#394059] leading-none capitalize">{activeUsername}</p>
+                    <span className="text-[11px] text-[#01BFD7]">Administrator</span>
+                  </div>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-slate-400"><path d="m6 9 6 6 6-6"/></svg>
+                </button>
 
+                {/* Kotak Menu Muncul Saat Diklik */}
+                {showProfileMenu && (
+                  <div className="absolute right-0 mt-2 w-48 bg-white border border-slate-100 rounded-xl shadow-xl py-2 z-50">
+                    <button onClick={handleLogout} className="w-full text-left px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 hover:text-[#01BFD7] flex items-center gap-3 transition">
+                      <span>🚪</span> Keluar
+                    </button>
+                    <div className="border-t border-slate-100 my-1"></div>
+                    <button onClick={handleDeleteAccount} className="w-full text-left px-4 py-2.5 text-sm font-medium text-rose-600 hover:bg-rose-50 flex items-center gap-3 transition">
+                      <span>🗑️</span> Hapus Akun
+                    </button>
+                  </div>
+                )}
+              </div>
+            </header>
+
+            {/* HALAMAN DASHBOARD */}
             {activeMenu === 'dashboard' && (
               <div className="p-8 space-y-6">
                 {isLoading ? (
@@ -324,7 +321,6 @@ export default function App() {
               </div>
             )}
 
-            {/* --- HALAMAN LAINNYA --- */}
             {activeMenu === 'barang' && <DataBarang />}
             {activeMenu === 'masuk' && <BarangMasuk />}
             {activeMenu === 'keluar' && <BarangKeluar />}
