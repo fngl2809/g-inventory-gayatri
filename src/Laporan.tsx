@@ -84,11 +84,11 @@ export default function Laporan() {
             </h2>
             <p className="text-sm text-slate-500 mt-1">Pilih bulan dan cetak ke PDF</p>
           </div>
-          <div className="flex items-center gap-4">
-            <span className="bg-slate-100 text-slate-600 px-4 py-2 rounded-xl text-sm font-bold border border-slate-200">{bulanInfo}</span>
+          <div className="flex flex-col sm:flex-row items-center gap-4 w-full md:w-auto">
+            <span className="bg-slate-100 text-slate-600 px-4 py-2.5 w-full sm:w-auto text-center rounded-xl text-sm font-bold border border-slate-200">{bulanInfo}</span>
             <button 
               onClick={() => window.print()}
-              className="bg-emerald-500 text-white px-5 py-2.5 rounded-xl text-sm font-bold hover:bg-emerald-600 shadow-md transition flex items-center gap-2"
+              className="w-full sm:w-auto bg-emerald-500 text-white px-5 py-2.5 rounded-xl text-sm font-bold hover:bg-emerald-600 shadow-md transition flex items-center justify-center gap-2"
             >
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="inline-block"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
               Cetak PDF
@@ -97,40 +97,43 @@ export default function Laporan() {
         </div>
 
         <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-          <table className="w-full text-left text-sm">
-            <thead className="bg-[#F4F7FC] text-slate-500 font-semibold border-b border-slate-100">
-              <tr>
-                <th className="p-4 text-center">No</th>
-                <th className="p-4">Kode Produk</th>
-                <th className="p-4">Nama Produk</th>
-                <th className="p-4">Kategori</th>
-                <th className="p-4 text-center">Awal Bulan</th>
-                <th className="p-4 text-center">Masuk</th>
-                <th className="p-4 text-center">Keluar</th>
-                <th className="p-4 text-center">Akhir Bulan</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {loading ? (
-                <tr><td colSpan={8} className="p-8 text-center text-slate-400">Menyusun laporan...</td></tr>
-              ) : laporanData.length === 0 ? (
-                <tr><td colSpan={8} className="p-8 text-center text-slate-500">Belum ada data barang.</td></tr>
-              ) : (
-                laporanData.map((item, index) => (
-                  <tr key={item.id} className="hover:bg-slate-50 transition">
-                    <td className="p-4 text-center text-slate-400">{index + 1}</td>
-                    <td className="p-4 font-bold text-[#01BFD7]">{item.kode_barang || '-'}</td>
-                    <td className="p-4 font-semibold text-[#394059]">{item.nama_barang}</td>
-                    <td className="p-4 text-slate-500">{item.kategori || '-'}</td>
-                    <td className="p-4 text-center font-medium text-slate-600">{item.awal}</td>
-                    <td className="p-4 text-center font-bold text-[#46FF23]">+{item.masuk}</td>
-                    <td className="p-4 text-center font-bold text-rose-500">-{item.keluar}</td>
-                    <td className="p-4 text-center font-black text-[#394059] text-base">{item.akhir}</td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+          {/* DIV PEMBUNGKUS UNTUK SCROLL HP */}
+          <div className="overflow-x-auto w-full">
+            <table className="w-full text-left text-sm min-w-[800px]">
+              <thead className="bg-[#F4F7FC] text-slate-500 font-semibold border-b border-slate-100">
+                <tr>
+                  <th className="p-4 text-center">No</th>
+                  <th className="p-4">Kode Produk</th>
+                  <th className="p-4">Nama Produk</th>
+                  <th className="p-4">Kategori</th>
+                  <th className="p-4 text-center">Awal Bulan</th>
+                  <th className="p-4 text-center">Masuk</th>
+                  <th className="p-4 text-center">Keluar</th>
+                  <th className="p-4 text-center">Akhir Bulan</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {loading ? (
+                  <tr><td colSpan={8} className="p-8 text-center text-slate-400">Menyusun laporan...</td></tr>
+                ) : laporanData.length === 0 ? (
+                  <tr><td colSpan={8} className="p-8 text-center text-slate-500">Belum ada data barang.</td></tr>
+                ) : (
+                  laporanData.map((item, index) => (
+                    <tr key={item.id} className="hover:bg-slate-50 transition">
+                      <td className="p-4 text-center text-slate-400">{index + 1}</td>
+                      <td className="p-4 font-bold text-[#01BFD7]">{item.kode_barang || '-'}</td>
+                      <td className="p-4 font-semibold text-[#394059]">{item.nama_barang}</td>
+                      <td className="p-4 text-slate-500">{item.kategori || '-'}</td>
+                      <td className="p-4 text-center font-medium text-slate-600">{item.awal}</td>
+                      <td className="p-4 text-center font-bold text-[#46FF23]">+{item.masuk}</td>
+                      <td className="p-4 text-center font-bold text-rose-500">-{item.keluar}</td>
+                      <td className="p-4 text-center font-black text-[#394059] text-base">{item.akhir}</td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
 
