@@ -8,7 +8,9 @@ export default function BarangMasuk() {
   const [showForm, setShowForm] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
+  // 1. TAMBAH barang_id DI SINI
   const [formData, setFormData] = useState({
+    barang_id: '',
     kode_barang: '',
     nama_barang: '',
     jumlah: 0,
@@ -20,24 +22,23 @@ export default function BarangMasuk() {
   }, [])
 
   const ambilData = async () => {
-    // Ambil riwayat barang masuk
     const { data: dataMasuk } = await supabase.from('barang_masuk').select('*').order('created_at', { ascending: false })
     if (dataMasuk) setRiwayatMasuk(dataMasuk)
 
-    // Ambil daftar barang untuk pilihan di dropdown (agar user tidak perlu ketik manual)
     const { data: dataBarang } = await supabase.from('barangs').select('*').order('nama_barang', { ascending: true })
     if (dataBarang) setDaftarBarang(dataBarang)
 
     setLoading(false)
   }
 
-  // Fungsi saat memilih barang dari dropdown, otomatis mengisi kode dan nama
-  const handlePilihBarang = (kode: string) => {
-    const barangTerpilih = daftarBarang.find(b => b.kode_barang === kode)
+  // 2. UBAH LOGIKA PENCARIAN MENGGUNAKAN ID BUKAN KODE BARANG
+  const handlePilihBarang = (idString: string) => {
+    const barangTerpilih = daftarBarang.find(b => b.id.toString() === idString)
     if (barangTerpilih) {
       setFormData({
         ...formData,
-        kode_barang: barangTerpilih.kode_barang,
+        barang_id: idString,
+        kode_barang: barangTerpilih.kode_barang || '', // Antisipasi kalau kosong
         nama_barang: barangTerpilih.nama_barang
       })
     }
@@ -47,7 +48,6 @@ export default function BarangMasuk() {
     e.preventDefault()
     setIsSubmitting(true)
 
-    // 1. Simpan ke tabel riwayat barang_masuk
     const { error: errMasuk } = await supabase.from('barang_masuk').insert([{
       kode_barang: formData.kode_barang,
       nama_barang: formData.nama_barang,
@@ -62,16 +62,16 @@ export default function BarangMasuk() {
       return
     }
 
-    // 2. Ambil stok lama dari tabel barangs, lalu UPDATE (tambahkan)
-    const barangTerkait = daftarBarang.find(b => b.kode_barang === formData.kode_barang)
+    // 3. UPDATE DATABASE MENGGUNAKAN ID (Lebih Aman)
+    const barangTerkait = daftarBarang.find(b => b.id.toString() === formData.barang_id)
     if (barangTerkait) {
       const stokBaru = barangTerkait.stok + formData.jumlah
-      await supabase.from('barangs').update({ stok: stokBaru }).eq('kode_barang', formData.kode_barang)
+      await supabase.from('barangs').update({ stok: stokBaru }).eq('id', barangTerkait.id)
     }
 
     setShowForm(false)
-    ambilData() // Refresh tabel
-    setFormData({ kode_barang: '', nama_barang: '', jumlah: 0, keterangan: '' })
+    ambilData() 
+    setFormData({ barang_id: '', kode_barang: '', nama_barang: '', jumlah: 0, keterangan: '' })
     setIsSubmitting(false)
   }
 
@@ -113,12 +113,11 @@ export default function BarangMasuk() {
               </tr>
             ) : (
               riwayatMasuk.map((item) => {
-                // Ubah format tanggal bawaan ke format yang lebih mudah dibaca
                 const tgl = new Date(item.created_at).toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' })
                 return (
                   <tr key={item.id} className="hover:bg-slate-50 transition">
                     <td className="p-4 text-slate-500">{tgl}</td>
-                    <td className="p-4 font-bold text-[#01BFD7]">{item.kode_barang}</td>
+                    <td className="p-4 font-bold text-[#01BFD7]">{item.kode_barang || '-'}</td>
                     <td className="p-4 font-semibold text-[#394059]">{item.nama_barang}</td>
                     <td className="p-4 text-center font-bold text-[#46FF23] text-base">+{item.jumlah}</td>
                     <td className="p-4 text-slate-600">{item.keterangan || '-'}</td>
@@ -142,17 +141,22 @@ export default function BarangMasuk() {
             <form onSubmit={handleSimpan} className="p-6 space-y-4">
               <div>
                 <label className="block text-xs font-bold text-[#394059] mb-1">Pilih Barang</label>
+                
+                {/* 4. UBAH BAGIAN SELECT INI (VALUE MENJADI ID) */}
                 <select 
                   required
                   className="w-full border border-slate-200 rounded-lg p-2.5 outline-none focus:border-[#01BFD7] text-sm transition text-[#394059] font-medium"
-                  value={formData.kode_barang}
+                  value={formData.barang_id}
                   onChange={(e) => handlePilihBarang(e.target.value)}
                 >
                   <option value="" disabled>-- Pilih Barang dari Gudang --</option>
                   {daftarBarang.map(b => (
-                    <option key={b.id} value={b.kode_barang}>{b.kode_barang} - {b.nama_barang}</option>
+                    <option key={b.id} value={b.id}>
+                      {b.kode_barang ? `${b.kode_barang} - ` : ''}{b.nama_barang}
+                    </option>
                   ))}
                 </select>
+
               </div>
 
               <div>
@@ -167,19 +171,21 @@ export default function BarangMasuk() {
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-[#394059] mb-1">Keterangan (Supplier / Nota)</label>
+                <label className="block text-xs font-bold text-[#394059] mb-1">
+                  Keterangan (Supplier / Nota) <span className="text-slate-400 font-normal">(Opsional)</span>
+                </label>
                 <input 
-                  type="text" required
+                  type="text" 
+                  className="w-full border border-slate-200 rounded-lg p-2.5 outline-none focus:border-[#01BFD7] text-sm" 
                   placeholder="Contoh: Pembelian dari PT. Global"
-                  className="w-full border border-slate-200 rounded-lg p-2.5 outline-none focus:border-[#01BFD7] text-sm transition"
-                  value={formData.keterangan}
-                  onChange={(e) => setFormData({...formData, keterangan: e.target.value})}
+                  value={formData.keterangan} 
+                  onChange={(e) => setFormData({...formData, keterangan: e.target.value})} 
                 />
               </div>
 
               <div className="flex gap-3 pt-4 mt-6 border-t border-slate-100">
                 <button type="button" onClick={() => setShowForm(false)} className="flex-1 py-2.5 rounded-xl text-sm font-bold text-slate-500 bg-slate-100 hover:bg-slate-200 transition">Batal</button>
-                <button type="submit" disabled={isSubmitting || !formData.kode_barang} className="flex-1 py-2.5 rounded-xl text-sm font-bold text-white bg-[#01BFD7] hover:brightness-95 transition disabled:opacity-50">
+                <button type="submit" disabled={isSubmitting || !formData.barang_id} className="flex-1 py-2.5 rounded-xl text-sm font-bold text-white bg-[#01BFD7] hover:brightness-95 transition disabled:opacity-50">
                   {isSubmitting ? 'Memproses...' : 'Simpan Transaksi'}
                 </button>
               </div>

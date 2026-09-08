@@ -186,7 +186,7 @@ export default function DataBarang() {
         </table>
       </div>
 
-      {/* Modal Form Tambah/Edit (Print Hidden otomatis ikut pembungkus jika ditaruh di luar, tapi amannya kita beri class) */}
+      {/* Modal Form Tambah/Edit */}
       {showForm && (
         <div className="fixed inset-0 bg-[#394059]/40 backdrop-blur-sm flex items-center justify-center z-50 print:hidden">
           <div className="bg-white w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden">
@@ -197,10 +197,15 @@ export default function DataBarang() {
             
             <form onSubmit={handleSimpan} className="p-6 space-y-4">
               <div className="grid grid-cols-2 gap-4">
+                
+                {/* BAGIAN YANG DIUBAH (HAPUS REQUIRED DAN TAMBAH TEKS OPSIONAL) */}
                 <div>
-                  <label className="block text-xs font-bold text-[#394059] mb-1">Kode Barang</label>
-                  <input type="text" required className="w-full border border-slate-200 rounded-lg p-2.5 outline-none focus:border-[#01BFD7] text-sm uppercase" value={formData.kode_barang} onChange={(e) => setFormData({...formData, kode_barang: e.target.value.toUpperCase()})} />
+                  <label className="block text-xs font-bold text-[#394059] mb-1">
+                    Kode Barang <span className="text-slate-400 font-normal">(Opsional)</span>
+                  </label>
+                  <input type="text" className="w-full border border-slate-200 rounded-lg p-2.5 outline-none focus:border-[#01BFD7] text-sm uppercase" value={formData.kode_barang} onChange={(e) => setFormData({...formData, kode_barang: e.target.value.toUpperCase()})} />
                 </div>
+
                 <div>
                   <label className="block text-xs font-bold text-[#394059] mb-1">Kategori</label>
                   <input type="text" className="w-full border border-slate-200 rounded-lg p-2.5 outline-none focus:border-[#01BFD7] text-sm" value={formData.kategori} onChange={(e) => setFormData({...formData, kategori: e.target.value})} />
