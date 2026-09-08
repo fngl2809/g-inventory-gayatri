@@ -33,7 +33,6 @@ export default function App() {
   const [aktivitas, setAktivitas] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(true)
 
-  // Ambil nama bulan saat ini untuk UI
   const bulanSekarang = new Date().toLocaleString('id-ID', { month: 'long', year: 'numeric' })
 
   useEffect(() => {
@@ -143,9 +142,9 @@ export default function App() {
                 <button onClick={() => setActiveMenu('laporan')} className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl transition ${activeMenu === 'laporan' ? 'bg-[#01BFD7] text-white' : 'text-slate-300 hover:bg-white/10'}`}><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg> Laporan</button>
               </nav>
 
-              <div className="p-4 border-t border-white/10 space-y-1.5">
-                <button onClick={handleLogout} className="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition text-rose-400 hover:bg-rose-500 hover:text-white font-medium text-sm"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg> Keluar</button>
-                <button onClick={handleDeleteAccount} className="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition text-slate-400 hover:bg-slate-700 hover:text-white font-medium text-sm"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg> Hapus Akun</button>
+              {/* FOOTER SIDEBAR YANG BERSIH */}
+              <div className="p-4 border-t border-white/10">
+                <p className="text-[10px] text-slate-400 text-center uppercase tracking-wider font-semibold">© 2026 G-Access System</p>
               </div>
             </div>
           </aside>
