@@ -154,6 +154,7 @@ export default function App() {
             
             <header className="bg-white border-b border-slate-200 px-8 py-4 flex items-center justify-between shadow-sm flex-shrink-0 relative z-40">
               <div>
+                {/* EMOJI TANGAN DIHAPUS DI BARIS INI */}
                 <h2 className="text-xl font-bold text-[#394059] capitalize">Hai, {activeUsername}</h2>
                 <p className="text-xs text-slate-400">Selamat datang di Sistem Informasi Stok Barang G-Access</p>
               </div>

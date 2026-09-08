@@ -6,7 +6,6 @@ export default function DataBarang() {
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
 
-  // State untuk form Tambah/Edit
   const [showForm, setShowForm] = useState(false)
   const [editId, setEditId] = useState<number | null>(null)
   const [formData, setFormData] = useState({
@@ -46,7 +45,7 @@ export default function DataBarang() {
 
   const dataTampil = barangs.filter(b => 
     b.nama_barang.toLowerCase().includes(search.toLowerCase()) ||
-    b.kode_barang.toLowerCase().includes(search.toLowerCase()) ||
+    (b.kode_barang && b.kode_barang.toLowerCase().includes(search.toLowerCase())) ||
     (b.kategori && b.kategori.toLowerCase().includes(search.toLowerCase()))
   )
 
@@ -54,7 +53,6 @@ export default function DataBarang() {
 
   return (
     <div className="p-8">
-      {/* Trik CSS Khusus Print */}
       <style>{`
         @media print {
           aside, header { display: none !important; }
@@ -63,9 +61,6 @@ export default function DataBarang() {
         }
       `}</style>
 
-      {/* =========================================
-          TAMPILAN WEB (Sembunyi Saat di Print)
-          ========================================= */}
       <div className="print:hidden">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
           <div>
@@ -82,16 +77,11 @@ export default function DataBarang() {
                 value={search} onChange={(e) => setSearch(e.target.value)}
               />
             </div>
-            {/* Tombol Cetak Baru */}
             <button 
               onClick={() => window.print()}
               className="w-full sm:w-auto bg-emerald-500 text-white px-5 py-2.5 rounded-xl text-sm font-bold hover:bg-emerald-600 shadow-md transition flex items-center justify-center gap-2"
             >
-              <span><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="mr-2 inline-block">
-  <polyline points="6 9 6 2 18 2 18 9"></polyline>
-  <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
-  <rect x="6" y="14" width="12" height="8"></rect>
-</svg></span> PDF
+              <span><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="mr-2 inline-block"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg></span> PDF
             </button>
             <button 
               onClick={() => { setFormData({ kode_barang: '', nama_barang: '', kategori: '', stok: 0, stok_minimum: 5, satuan: 'pcs', lokasi: '' }); setEditId(null); setShowForm(true); }}
@@ -102,7 +92,6 @@ export default function DataBarang() {
           </div>
         </div>
 
-        {/* Tabel Web */}
         <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
           <table className="w-full text-left text-sm">
             <thead className="bg-[#F4F7FC] text-slate-500 font-semibold border-b border-slate-100">
@@ -126,25 +115,17 @@ export default function DataBarang() {
                 dataTampil.map((item, index) => (
                   <tr key={item.id} className="hover:bg-slate-50 transition">
                     <td className="p-4 text-center text-slate-400">{index + 1}</td>
-                    <td className="p-4 font-bold text-[#01BFD7]">{item.kode_barang}</td>
+                    <td className="p-4 font-bold text-[#01BFD7]">{item.kode_barang || '-'}</td>
                     <td className="p-4 font-semibold text-[#394059]">{item.nama_barang}</td>
-                    <td className="p-4 text-slate-500">{item.kategori}</td>
+                    <td className="p-4 text-slate-500">{item.kategori || '-'}</td>
                     <td className="p-4 text-center font-black text-[#394059] text-base">{item.stok}</td>
                     <td className="p-4 text-center text-slate-400">{item.stok_minimum || 5}</td>
                     <td className="p-4 text-center">
                       {item.stok <= 0 ? <span className="px-3 py-1 rounded-full text-xs font-bold bg-red-100 text-red-700">Habis</span> : item.stok <= (item.stok_minimum || 5) ? <span className="px-3 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-700">Menipis</span> : <span className="px-3 py-1 rounded-full text-xs font-bold bg-[#46FF23]/20 text-green-700">Aman</span>}
                     </td>
                     <td className="p-4 text-center flex justify-center gap-2">
-                      <button onClick={() => { setFormData(item); setEditId(item.id); setShowForm(true); }} className="text-amber-500 hover:text-amber-600"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-slate-400 hover:text-amber-500 transition-colors">
-  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-</svg></button>
-                      <button onClick={() => handleHapus(item.id)} className="text-rose-400 hover:text-rose-600"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-slate-400 hover:text-rose-500 transition-colors">
-  <polyline points="3 6 5 6 21 6"></polyline>
-  <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-  <line x1="10" y1="11" x2="10" y2="17"></line>
-  <line x1="14" y1="11" x2="14" y2="17"></line>
-</svg></button>
+                      <button onClick={() => { setFormData(item); setEditId(item.id); setShowForm(true); }} className="text-amber-500 hover:text-amber-600"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-slate-400 hover:text-amber-500 transition-colors"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg></button>
+                      <button onClick={() => handleHapus(item.id)} className="text-rose-400 hover:text-rose-600"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-slate-400 hover:text-rose-500 transition-colors"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg></button>
                     </td>
                   </tr>
                 ))
@@ -154,22 +135,23 @@ export default function DataBarang() {
         </div>
       </div>
 
-      {/* =========================================
-          TAMPILAN KERTAS PRINT (Sembunyi di Web)
-          ========================================= */}
       <div className="hidden print:block text-black p-4">
-        <div className="text-center mb-8">
-          <h1 className="text-2xl font-bold text-black mb-1">PT. GAYATRI (G-ACCESS)</h1>
-          <h2 className="text-xl font-bold text-black mb-3">Daftar Stok Barang</h2>
-          <p className="text-sm text-black">Dicetak pada: {tanggalCetak}</p>
+        {/* KOP SURAT RESMI */}
+        <div className="text-center mb-8 border-b-[3px] border-black pb-4">
+          <h1 className="text-2xl font-black text-black uppercase mb-1">PT. GAYATRI LINTAS NUSANTARA - POP PACITAN</h1>
+          <h2 className="text-lg font-bold text-black uppercase mb-2">Daftar Stok Barang</h2>
+          <p className="text-sm text-black mb-1">Alamat: RT 01 RW 05, Dusun Krajan, Desa Kedungbendo, Kecamatan Arjosari, Kabupaten Pacitan</p>
+          <p className="text-sm text-black mb-3">Email: gayatripoppacitan@gmail.com</p>
+          <p className="text-sm text-black font-semibold">Dicetak pada: {tanggalCetak}</p>
         </div>
 
-        <table className="w-full text-center text-sm border-collapse border border-black text-black">
+        <table className="w-full text-center text-sm border-collapse border border-black text-black mb-12">
           <thead>
-            <tr>
+            <tr className="bg-gray-100">
               <th className="border border-black p-3 font-bold w-12">No.</th>
-              <th className="border border-black p-3 font-bold w-48">Kode Produk</th>
+              <th className="border border-black p-3 font-bold w-32">Kode Produk</th>
               <th className="border border-black p-3 font-bold text-left">Nama Produk</th>
+              <th className="border border-black p-3 font-bold">Kategori</th>
               <th className="border border-black p-3 font-bold w-32">Stok Tersedia</th>
             </tr>
           </thead>
@@ -177,13 +159,22 @@ export default function DataBarang() {
             {dataTampil.map((item, index) => (
               <tr key={item.id}>
                 <td className="border border-black p-2">{index + 1}</td>
-                <td className="border border-black p-2">{item.kode_barang}</td>
+                <td className="border border-black p-2">{item.kode_barang || '-'}</td>
                 <td className="border border-black p-2 text-left font-medium">{item.nama_barang}</td>
+                <td className="border border-black p-2">{item.kategori || '-'}</td>
                 <td className="border border-black p-2 font-bold">{item.stok}</td>
               </tr>
             ))}
           </tbody>
         </table>
+
+        {/* KOLOM TANDA TANGAN */}
+        <div className="flex justify-end pr-12 mt-16">
+          <div className="text-center">
+            <p className="text-sm text-black mb-20">Mengetahui,<br/>Kepala Gudang</p>
+            <div className="w-48 border-b border-black"></div>
+          </div>
+        </div>
       </div>
 
       {/* Modal Form Tambah/Edit */}
@@ -197,24 +188,21 @@ export default function DataBarang() {
             
             <form onSubmit={handleSimpan} className="p-6 space-y-4">
               <div className="grid grid-cols-2 gap-4">
-                
-                {/* BAGIAN YANG DIUBAH (HAPUS REQUIRED DAN TAMBAH TEKS OPSIONAL) */}
                 <div>
                   <label className="block text-xs font-bold text-[#394059] mb-1">
                     Kode Barang <span className="text-slate-400 font-normal">(Opsional)</span>
                   </label>
                   <input type="text" className="w-full border border-slate-200 rounded-lg p-2.5 outline-none focus:border-[#01BFD7] text-sm uppercase" value={formData.kode_barang} onChange={(e) => setFormData({...formData, kode_barang: e.target.value.toUpperCase()})} />
                 </div>
-
                 <div>
-                  <label className="block text-xs font-bold text-[#394059] mb-1">Kategori</label>
-                  <input type="text" className="w-full border border-slate-200 rounded-lg p-2.5 outline-none focus:border-[#01BFD7] text-sm" value={formData.kategori} onChange={(e) => setFormData({...formData, kategori: e.target.value})} />
+                  <label className="block text-xs font-bold text-[#394059] mb-1">Kategori <span className="text-slate-400 font-normal">(Opsional)</span></label>
+                  <input type="text" className="w-full border border-slate-200 rounded-lg p-2.5 outline-none focus:border-[#01BFD7] text-sm uppercase" value={formData.kategori} onChange={(e) => setFormData({...formData, kategori: e.target.value.toUpperCase()})} />
                 </div>
               </div>
 
               <div>
                 <label className="block text-xs font-bold text-[#394059] mb-1">Nama Barang</label>
-                <input type="text" required className="w-full border border-slate-200 rounded-lg p-2.5 outline-none focus:border-[#01BFD7] text-sm" value={formData.nama_barang} onChange={(e) => setFormData({...formData, nama_barang: e.target.value})} />
+                <input type="text" required className="w-full border border-slate-200 rounded-lg p-2.5 outline-none focus:border-[#01BFD7] text-sm uppercase" value={formData.nama_barang} onChange={(e) => setFormData({...formData, nama_barang: e.target.value.toUpperCase()})} />
               </div>
 
               <div className="grid grid-cols-2 gap-4">

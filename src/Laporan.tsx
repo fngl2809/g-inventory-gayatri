@@ -4,60 +4,69 @@ import { supabase } from './supabase'
 export default function Laporan() {
   const [laporanData, setLaporanData] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
-  const [daftarBulan, setDaftarBulan] = useState<string[]>([])
-  
-  const [bulanFilter, setBulanFilter] = useState(new Date().toISOString().substring(0, 7))
+  const [bulanInfo, setBulanInfo] = useState('')
 
   useEffect(() => {
     ambilDataLaporan()
-  }, [bulanFilter])
+  }, [])
 
   const ambilDataLaporan = async () => {
     setLoading(true)
-    try {
-      const { data: barangs } = await supabase.from('barangs').select('*')
-      const { data: masuk } = await supabase.from('barang_masuk').select('*')
-      const { data: keluar } = await supabase.from('barang_keluar').select('*')
+    const dateNow = new Date()
+    const currentMonth = dateNow.getMonth()
+    const currentYear = dateNow.getFullYear()
 
-      const tanggalMasuk = (masuk || []).map(m => m.created_at.substring(0, 7))
-      const tanggalKeluar = (keluar || []).map(k => k.created_at.substring(0, 7))
-      const semuaTanggal = [...tanggalMasuk, ...tanggalKeluar, new Date().toISOString().substring(0, 7)]
-      const unikBulan = Array.from(new Set(semuaTanggal)).sort().reverse()
-      setDaftarBulan(unikBulan)
+    const namaBulan = dateNow.toLocaleString('id-ID', { month: 'long', year: 'numeric' })
+    setBulanInfo(namaBulan)
 
-      const rekap = (barangs || []).map((brg, index) => {
-        const masukBulanIni = (masuk || []).filter(m => m.kode_barang === brg.kode_barang && m.created_at.substring(0, 7) === bulanFilter).reduce((sum, item) => sum + item.jumlah, 0)
-        const keluarBulanIni = (keluar || []).filter(k => k.kode_barang === brg.kode_barang && k.created_at.substring(0, 7) === bulanFilter).reduce((sum, item) => sum + item.jumlah, 0)
+    const { data: barangs } = await supabase.from('barangs').select('*').order('nama_barang', { ascending: true })
+    const { data: masuk } = await supabase.from('barang_masuk').select('*')
+    const { data: keluar } = await supabase.from('barang_keluar').select('*')
 
-        const masukSetelah = (masuk || []).filter(m => m.kode_barang === brg.kode_barang && m.created_at.substring(0, 7) > bulanFilter).reduce((sum, item) => sum + item.jumlah, 0)
-        const keluarSetelah = (keluar || []).filter(k => k.kode_barang === brg.kode_barang && k.created_at.substring(0, 7) > bulanFilter).reduce((sum, item) => sum + item.jumlah, 0)
+    let report: any[] = []
 
-        const jumlahAkhir = brg.stok - masukSetelah + keluarSetelah
-        const jumlahAwal = jumlahAkhir - masukBulanIni + keluarBulanIni
+    if (barangs) {
+      barangs.forEach(b => {
+        let totalMasuk = 0
+        let totalKeluar = 0
 
-        return {
-          no: index + 1,
-          nama_produk: brg.nama_barang,
-          kode_produk: brg.kode_barang,
-          jumlah_awal: jumlahAwal,
-          pemasukan: masukBulanIni,
-          pengeluaran: keluarBulanIni,
-          jumlah_akhir: jumlahAkhir
+        if (masuk) {
+          masuk.forEach(m => {
+            const mDate = new Date(m.created_at)
+            if (m.kode_barang === b.kode_barang && mDate.getMonth() === currentMonth && mDate.getFullYear() === currentYear) {
+              totalMasuk += (m.jumlah || 0)
+            }
+          })
         }
-      })
 
-      setLaporanData(rekap)
-    } catch (error) {
-      console.error("Gagal mengambil laporan:", error)
+        if (keluar) {
+          keluar.forEach(k => {
+            const kDate = new Date(k.created_at)
+            if (k.kode_barang === b.kode_barang && kDate.getMonth() === currentMonth && kDate.getFullYear() === currentYear) {
+              totalKeluar += (k.jumlah || 0)
+            }
+          })
+        }
+
+        const akhir = b.stok || 0
+        const awal = akhir - totalMasuk + totalKeluar
+
+        report.push({
+          ...b,
+          awal,
+          masuk: totalMasuk,
+          keluar: totalKeluar,
+          akhir
+        })
+      })
     }
+
+    setLaporanData(report)
     setLoading(false)
   }
 
-  const namaBulanTampil = new Date(bulanFilter + '-01').toLocaleString('id-ID', { month: 'long', year: 'numeric' })
-
   return (
     <div className="p-8">
-      {/* Trik CSS: Sembunyikan Sidebar & Header Utama khusus saat Print */}
       <style>{`
         @media print {
           aside, header { display: none !important; }
@@ -66,73 +75,57 @@ export default function Laporan() {
         }
       `}</style>
 
-      {/* =========================================
-          TAMPILAN WEB (Sembunyi Saat di Print)
-          ========================================= */}
       <div className="print:hidden">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-6 gap-4">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
           <div>
-            <h2 className="text-2xl font-bold text-[#394059]"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-[#01BFD7] mr-3 inline-block"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg> Laporan Stok Bulanan</h2>
+            <h2 className="text-2xl font-bold text-[#394059] flex items-center gap-2">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-[#01BFD7] mr-3 inline-block"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+              Laporan Stok Bulanan
+            </h2>
             <p className="text-sm text-slate-500 mt-1">Pilih bulan dan cetak ke PDF</p>
           </div>
-          
-          <div className="flex gap-3 items-center w-full md:w-auto">
-            <select 
-              className="border border-slate-200 rounded-xl p-2.5 outline-none focus:border-[#01BFD7] text-sm font-bold text-[#394059] flex-1 md:w-48 transition"
-              value={bulanFilter}
-              onChange={(e) => setBulanFilter(e.target.value)}
-            >
-              {daftarBulan.map(bln => (
-                <option key={bln} value={bln}>
-                  {new Date(bln + '-01').toLocaleString('id-ID', { month: 'long', year: 'numeric' })}
-                </option>
-              ))}
-            </select>
+          <div className="flex items-center gap-4">
+            <span className="bg-slate-100 text-slate-600 px-4 py-2 rounded-xl text-sm font-bold border border-slate-200">{bulanInfo}</span>
             <button 
-              onClick={() => window.print()} 
-              className="flex items-center gap-2 bg-[#01BFD7] hover:brightness-95 text-white px-5 py-2.5 rounded-xl text-sm font-bold shadow-md shadow-[#01BFD7]/30 transition"
+              onClick={() => window.print()}
+              className="bg-emerald-500 text-white px-5 py-2.5 rounded-xl text-sm font-bold hover:bg-emerald-600 shadow-md transition flex items-center gap-2"
             >
-              <span><button className="... (class tailwind bawaanmu)">
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="mr-2 inline-block">
-    <polyline points="6 9 6 2 18 2 18 9"></polyline>
-    <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
-    <rect x="6" y="14" width="12" height="8"></rect>
-  </svg>
-  PDF
-</button></span> Cetak PDF
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="inline-block"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+              Cetak PDF
             </button>
           </div>
         </div>
 
-        {/* Tabel Modern Ala Web */}
         <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
           <table className="w-full text-left text-sm">
             <thead className="bg-[#F4F7FC] text-slate-500 font-semibold border-b border-slate-100">
               <tr>
                 <th className="p-4 text-center">No</th>
-                <th className="p-4">Nama Produk</th>
                 <th className="p-4">Kode Produk</th>
+                <th className="p-4">Nama Produk</th>
+                <th className="p-4">Kategori</th>
                 <th className="p-4 text-center">Awal Bulan</th>
                 <th className="p-4 text-center">Masuk</th>
                 <th className="p-4 text-center">Keluar</th>
                 <th className="p-4 text-center">Akhir Bulan</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 font-medium">
+            <tbody className="divide-y divide-slate-100">
               {loading ? (
-                <tr><td colSpan={7} className="p-8 text-center text-slate-400">Menghitung kalkulasi data...</td></tr>
+                <tr><td colSpan={8} className="p-8 text-center text-slate-400">Menyusun laporan...</td></tr>
               ) : laporanData.length === 0 ? (
-                <tr><td colSpan={7} className="p-8 text-center text-slate-500">Belum ada data barang.</td></tr>
+                <tr><td colSpan={8} className="p-8 text-center text-slate-500">Belum ada data barang.</td></tr>
               ) : (
-                laporanData.map((item) => (
-                  <tr key={item.kode_produk} className="hover:bg-slate-50 transition">
-                    <td className="p-4 text-center text-slate-400">{item.no}</td>
-                    <td className="p-4 text-[#394059] font-bold">{item.nama_produk}</td>
-                    <td className="p-4 text-[#01BFD7]">{item.kode_produk}</td>
-                    <td className="p-4 text-center text-slate-600">{item.jumlah_awal}</td>
-                    <td className="p-4 text-center text-[#46FF23] font-bold">+{item.pemasukan}</td>
-                    <td className="p-4 text-center text-rose-500 font-bold">-{item.pengeluaran}</td>
-                    <td className="p-4 text-center text-[#394059] font-black text-lg">{item.jumlah_akhir}</td>
+                laporanData.map((item, index) => (
+                  <tr key={item.id} className="hover:bg-slate-50 transition">
+                    <td className="p-4 text-center text-slate-400">{index + 1}</td>
+                    <td className="p-4 font-bold text-[#01BFD7]">{item.kode_barang || '-'}</td>
+                    <td className="p-4 font-semibold text-[#394059]">{item.nama_barang}</td>
+                    <td className="p-4 text-slate-500">{item.kategori || '-'}</td>
+                    <td className="p-4 text-center font-medium text-slate-600">{item.awal}</td>
+                    <td className="p-4 text-center font-bold text-[#46FF23]">+{item.masuk}</td>
+                    <td className="p-4 text-center font-bold text-rose-500">-{item.keluar}</td>
+                    <td className="p-4 text-center font-black text-[#394059] text-base">{item.akhir}</td>
                   </tr>
                 ))
               )}
@@ -141,54 +134,52 @@ export default function Laporan() {
         </div>
       </div>
 
-
-      {/* =========================================
-          TAMPILAN KERTAS PRINT (Sembunyi di Web)
-          ========================================= */}
       <div className="hidden print:block text-black p-4">
-        <div className="text-center mb-8">
-          <h1 className="text-2xl font-bold text-black mb-1">PT. GAYATRI (G-ACCESS) - Laporan Stok Gudang</h1>
-          <h2 className="text-xl font-bold text-black mb-3">{namaBulanTampil}</h2>
-          <p className="text-sm text-black">Alamat: Jl. Contoh Alamat No.123, Kota Data</p>
-          <p className="text-sm text-black">Nomor Telepon: (021) 123-4567</p>
-          <p className="text-sm text-black">email: admin@g-access.com, website: www.g-access.com</p>
+        {/* KOP SURAT YANG DIPERBARUI */}
+        <div className="text-center mb-8 border-b-[3px] border-black pb-4">
+          <h1 className="text-2xl font-black text-black uppercase mb-1">PT. GAYATRI LINTAS NUSANTARA - POP PACITAN</h1>
+          <h2 className="text-lg font-bold text-black uppercase mb-2">Laporan Rekapitulasi Stok Gudang</h2>
+          <p className="text-sm text-black mb-1">Alamat: RT 01 RW 05, Dusun Krajan, Desa Kedungbendo, Kecamatan Arjosari, Kabupaten Pacitan</p>
+          <p className="text-sm text-black mb-3">Email: gayatripoppacitan@gmail.com</p>
+          <p className="text-sm text-black font-semibold">Periode: {bulanInfo}</p>
         </div>
 
-        <table className="w-full text-center text-sm border-collapse border border-black text-black">
+        <table className="w-full text-center text-sm border-collapse border border-black text-black mb-12">
           <thead>
-            <tr>
-              <th className="border border-black p-3 font-bold">No.</th>
-              <th className="border border-black p-3 font-bold">Nama Produk</th>
+            <tr className="bg-gray-100">
+              <th className="border border-black p-3 font-bold w-12">No.</th>
               <th className="border border-black p-3 font-bold">Kode Produk</th>
-              <th className="border border-black p-3 font-bold">Jumlah<br/>Awal<br/>Bulan<br/>(Unit)</th>
+              <th className="border border-black p-3 font-bold text-left">Nama Produk</th>
+              <th className="border border-black p-3 font-bold">Kategori</th>
+              <th className="border border-black p-3 font-bold">Jumlah Awal<br/>(Unit)</th>
               <th className="border border-black p-3 font-bold">Pemasukan<br/>(Unit)</th>
               <th className="border border-black p-3 font-bold">Pengeluaran<br/>(Unit)</th>
-              <th className="border border-black p-3 font-bold">Jumlah<br/>Akhir<br/>Bulan<br/>(Unit)</th>
+              <th className="border border-black p-3 font-bold">Jumlah Akhir<br/>(Unit)</th>
             </tr>
           </thead>
           <tbody>
-            {laporanData.map((item) => (
-              <tr key={item.kode_produk}>
-                <td className="border border-black p-2">{item.no}</td>
-                <td className="border border-black p-2 text-left font-medium">{item.nama_produk}</td>
-                <td className="border border-black p-2">{item.kode_produk}</td>
-                <td className="border border-black p-2 font-semibold">{item.jumlah_awal}</td>
-                <td className="border border-black p-2">{item.pemasukan}</td>
-                <td className="border border-black p-2">{item.pengeluaran}</td>
-                <td className="border border-black p-2 font-bold">{item.jumlah_akhir}</td>
+            {laporanData.map((item, index) => (
+              <tr key={item.id}>
+                <td className="border border-black p-2">{index + 1}</td>
+                <td className="border border-black p-2">{item.kode_barang || '-'}</td>
+                <td className="border border-black p-2 text-left font-medium">{item.nama_barang}</td>
+                <td className="border border-black p-2">{item.kategori || '-'}</td>
+                <td className="border border-black p-2">{item.awal}</td>
+                <td className="border border-black p-2">{item.masuk}</td>
+                <td className="border border-black p-2">{item.keluar}</td>
+                <td className="border border-black p-2 font-bold">{item.akhir}</td>
               </tr>
             ))}
           </tbody>
         </table>
 
-        <div className="mt-16 flex justify-end">
+        <div className="flex justify-end pr-12 mt-16">
           <div className="text-center">
-            <p className="text-sm text-black mb-16">Mengetahui,<br/>Kepala Gudang</p>
-            <p className="text-sm text-black font-bold underline">_________________</p>
+            <p className="text-sm text-black mb-20">Mengetahui,<br/>Kepala Gudang</p>
+            <div className="w-48 border-b border-black"></div>
           </div>
         </div>
       </div>
-      
     </div>
   )
 }
