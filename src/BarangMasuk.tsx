@@ -8,13 +8,15 @@ export default function BarangMasuk() {
   const [showForm, setShowForm] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  // 1. TAMBAH barang_id DI SINI
+  // 1. State formData sudah benar
   const [formData, setFormData] = useState({
     barang_id: '',
     kode_barang: '',
     nama_barang: '',
     jumlah: 0,
-    keterangan: ''
+    keterangan: '',
+    tanggal_datang: '', // Sudah siap
+    nama_penginput: ''  // Sudah siap
   })
 
   useEffect(() => {
@@ -31,14 +33,13 @@ export default function BarangMasuk() {
     setLoading(false)
   }
 
-  // 2. UBAH LOGIKA PENCARIAN MENGGUNAKAN ID BUKAN KODE BARANG
   const handlePilihBarang = (idString: string) => {
     const barangTerpilih = daftarBarang.find(b => b.id.toString() === idString)
     if (barangTerpilih) {
       setFormData({
         ...formData,
         barang_id: idString,
-        kode_barang: barangTerpilih.kode_barang || '', // Antisipasi kalau kosong
+        kode_barang: barangTerpilih.kode_barang || '',
         nama_barang: barangTerpilih.nama_barang
       })
     }
@@ -48,12 +49,14 @@ export default function BarangMasuk() {
     e.preventDefault()
     setIsSubmitting(true)
 
+    // 2. PERBAIKAN: Masukkan tanggal_datang dan nama_penginput ke payload Supabase
     const { error: errMasuk } = await supabase.from('barang_masuk').insert([{
       kode_barang: formData.kode_barang,
       nama_barang: formData.nama_barang,
       jumlah: formData.jumlah,
       keterangan: formData.keterangan,
-      oleh: 'Admin'
+      tanggal_datang: formData.tanggal_datang, // Dikirim ke database
+      nama_penginput: formData.nama_penginput // Dikirim ke database
     }])
 
     if (errMasuk) {
@@ -62,7 +65,6 @@ export default function BarangMasuk() {
       return
     }
 
-    // 3. UPDATE DATABASE MENGGUNAKAN ID (Lebih Aman)
     const barangTerkait = daftarBarang.find(b => b.id.toString() === formData.barang_id)
     if (barangTerkait) {
       const stokBaru = barangTerkait.stok + formData.jumlah
@@ -71,7 +73,8 @@ export default function BarangMasuk() {
 
     setShowForm(false)
     ambilData() 
-    setFormData({ barang_id: '', kode_barang: '', nama_barang: '', jumlah: 0, keterangan: '' })
+    // Jangan lupa reset state yang baru juga
+    setFormData({ barang_id: '', kode_barang: '', nama_barang: '', jumlah: 0, keterangan: '', tanggal_datang: '', nama_penginput: '' })
     setIsSubmitting(false)
   }
 
@@ -91,12 +94,11 @@ export default function BarangMasuk() {
       </div>
 
       <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-        {/* TABEL DIBUNGKUS OVERFLOW UNTUK HP */}
         <div className="overflow-x-auto w-full">
           <table className="w-full text-left text-sm min-w-[800px]">
             <thead className="bg-[#F4F7FC] text-slate-500 font-semibold border-b border-slate-100">
               <tr>
-                <th className="p-4">Tanggal</th>
+                <th className="p-4">Tanggal Datang</th>
                 <th className="p-4">Kode</th>
                 <th className="p-4">Nama Barang</th>
                 <th className="p-4 text-center">Jumlah Masuk</th>
@@ -115,7 +117,11 @@ export default function BarangMasuk() {
                 </tr>
               ) : (
                 riwayatMasuk.map((item) => {
-                  const tgl = new Date(item.created_at).toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' })
+                  // 3. PERBAIKAN: Tampilkan tanggal_datang jika ada, kalau belum ada data lama pakai created_at
+                  const tgl = item.tanggal_datang 
+                    ? new Date(item.tanggal_datang).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })
+                    : new Date(item.created_at).toLocaleString('id-ID', { dateStyle: 'medium' })
+
                   return (
                     <tr key={item.id} className="hover:bg-slate-50 transition">
                       <td className="p-4 text-slate-500">{tgl}</td>
@@ -123,7 +129,8 @@ export default function BarangMasuk() {
                       <td className="p-4 font-semibold text-[#394059]">{item.nama_barang}</td>
                       <td className="p-4 text-center font-bold text-[#46FF23] text-base">+{item.jumlah}</td>
                       <td className="p-4 text-slate-600">{item.keterangan || '-'}</td>
-                      <td className="p-4 text-slate-500 text-xs">{item.oleh}</td>
+                      {/* PERBAIKAN: Tampilkan nama_penginput */}
+                      <td className="p-4 text-slate-500 text-xs capitalize">{item.nama_penginput || 'Admin'}</td>
                     </tr>
                   )
                 })
@@ -135,17 +142,28 @@ export default function BarangMasuk() {
 
       {showForm && (
         <div className="fixed inset-0 bg-[#394059]/40 backdrop-blur-sm flex items-center justify-center z-50">
-          <div className="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden">
-            <div className="bg-[#394059] p-4 text-white flex justify-between items-center">
+          <div className="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
+            <div className="bg-[#394059] p-4 text-white flex justify-between items-center shrink-0">
               <h3 className="font-bold text-lg">Catat Barang Masuk</h3>
               <button onClick={() => setShowForm(false)} className="text-slate-400 hover:text-[#01BFD7] text-xl leading-none">&times;</button>
             </div>
             
-            <form onSubmit={handleSimpan} className="p-6 space-y-4">
+            {/* Tambahan overflow-y-auto supaya modal bisa di-scroll kalau layarnya kecil */}
+            <form onSubmit={handleSimpan} className="p-6 space-y-4 overflow-y-auto">
+              
+              {/* INPUT TANGGAL DATANG */}
+              <div>
+                <label className="block text-xs font-bold text-[#394059] mb-1">Tanggal Datang</label>
+                <input 
+                  type="date" required
+                  className="w-full border border-slate-200 rounded-lg p-2.5 outline-none focus:border-[#01BFD7] text-sm transition"
+                  value={formData.tanggal_datang}
+                  onChange={(e) => setFormData({...formData, tanggal_datang: e.target.value})}
+                />
+              </div>
+
               <div>
                 <label className="block text-xs font-bold text-[#394059] mb-1">Pilih Barang</label>
-                
-                {/* 4. UBAH BAGIAN SELECT INI (VALUE MENJADI ID) */}
                 <select 
                   required
                   className="w-full border border-slate-200 rounded-lg p-2.5 outline-none focus:border-[#01BFD7] text-sm transition text-[#394059] font-medium"
@@ -159,7 +177,6 @@ export default function BarangMasuk() {
                     </option>
                   ))}
                 </select>
-
               </div>
 
               <div>
@@ -175,7 +192,7 @@ export default function BarangMasuk() {
 
               <div>
                 <label className="block text-xs font-bold text-[#394059] mb-1">
-                  Keterangan (Supplier / Nota) <span className="text-slate-400 font-normal">(Opsional)</span>
+                  Keterangan <span className="text-slate-400 font-normal">(Opsional)</span>
                 </label>
                 <input 
                   type="text" 
@@ -183,6 +200,18 @@ export default function BarangMasuk() {
                   placeholder="Contoh: Pembelian dari PT. Global"
                   value={formData.keterangan} 
                   onChange={(e) => setFormData({...formData, keterangan: e.target.value})} 
+                />
+              </div>
+
+              {/* INPUT NAMA PENGINPUT */}
+              <div>
+                <label className="block text-xs font-bold text-[#394059] mb-1">Nama Penginput</label>
+                <input 
+                  type="text" required
+                  placeholder="Contoh: Zahra"
+                  className="w-full border border-slate-200 rounded-lg p-2.5 outline-none focus:border-[#01BFD7] text-sm transition capitalize"
+                  value={formData.nama_penginput}
+                  onChange={(e) => setFormData({...formData, nama_penginput: e.target.value})}
                 />
               </div>
 
