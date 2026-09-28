@@ -211,6 +211,16 @@ export default function InventarisServer() {
         </div>
       </div>
 
+      {/* ================= DATALIST REUSABLE ================= */}
+      {/* Ini adalah komponen yang menampung daftar lokasi server untuk dropdown form */}
+      <datalist id="lokasi-server-list">
+        {daftarServerUnik
+          .filter(server => server !== 'Semua') // Pastikan kata "Semua" tidak masuk ke pilihan form
+          .map((server, idx) => (
+            <option key={idx} value={server} />
+        ))}
+      </datalist>
+
       {/* ================= MODAL TAMBAH ================= */}
       {showForm && (
         <div className="fixed inset-0 bg-[#394059]/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
@@ -223,9 +233,14 @@ export default function InventarisServer() {
             <form onSubmit={handleSimpan} className="p-5 md:p-6 space-y-4 overflow-y-auto">
               <div>
                 <label className="block text-xs font-bold text-[#394059] mb-1">Lokasi Server</label>
-                <input type="text" required placeholder="Contoh: Server Temon..."
+                <input 
+                  type="text" 
+                  list="lokasi-server-list" /* Menghubungkan input dengan Datalist di atas */
+                  required 
+                  placeholder="Contoh: Server Temon..."
                   className="w-full border border-slate-200 rounded-lg p-2.5 outline-none focus:border-[#01BFD7] text-sm transition capitalize"
-                  value={formData.lokasi_server} onChange={(e) => setFormData({...formData, lokasi_server: e.target.value})}
+                  value={formData.lokasi_server} 
+                  onChange={(e) => setFormData({...formData, lokasi_server: e.target.value})}
                 />
               </div>
               <div>
@@ -275,9 +290,13 @@ export default function InventarisServer() {
             <form onSubmit={handleUpdate} className="p-5 md:p-6 space-y-4 overflow-y-auto">
               <div>
                 <label className="block text-xs font-bold text-[#394059] mb-1">Lokasi Server</label>
-                <input type="text" required
+                <input 
+                  type="text" 
+                  list="lokasi-server-list" /* Menghubungkan input edit dengan Datalist juga */
+                  required
                   className="w-full border border-slate-200 rounded-lg p-2.5 outline-none focus:border-[#01BFD7] text-sm transition capitalize"
-                  value={editData.lokasi_server} onChange={(e) => setEditData({...editData, lokasi_server: e.target.value})}
+                  value={editData.lokasi_server} 
+                  onChange={(e) => setEditData({...editData, lokasi_server: e.target.value})}
                 />
               </div>
               <div>
