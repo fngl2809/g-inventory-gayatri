@@ -1,11 +1,18 @@
 import { useState } from 'react'
 import { supabase } from './supabase'
 
-export default function Login({ onLoginSuccess }: { onLoginSuccess: () => void }) {
+interface LoginProps {
+  onLoginSuccess: () => void
+}
+
+export default function Login({ onLoginSuccess }: LoginProps) {
+  // State untuk mengatur mode Login atau Daftar
   const [isLogin, setIsLogin] = useState(true)
-  const [username, setUsername] = useState('')
-  const [email, setEmail] = useState('') 
+  
+  // State khusus Email & Password (Username dihapus karena sudah pakai email murni)
+  const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  
   const [loading, setLoading] = useState(false)
   const [errorMsg, setErrorMsg] = useState('')
   const [successMsg, setSuccessMsg] = useState('')
@@ -16,165 +23,133 @@ export default function Login({ onLoginSuccess }: { onLoginSuccess: () => void }
     setErrorMsg('')
     setSuccessMsg('')
 
-    const formatUsername = username.toLowerCase().trim().replace(/\s+/g, '')
-    const systemEmail = `${formatUsername}@gaccess.system`
-
     if (isLogin) {
-      const { error } = await supabase.auth.signInWithPassword({ email: systemEmail, password })
+      // PROSES LOGIN
+      const { error } = await supabase.auth.signInWithPassword({ email, password })
       if (error) {
-        setErrorMsg('Username atau kata sandi salah!')
-        setLoading(false)
+        setErrorMsg('Login gagal: Email atau kata sandi salah.')
       } else {
-        onLoginSuccess() 
+        onLoginSuccess()
       }
     } else {
+      // PROSES DAFTAR AKUN BARU
       const { error } = await supabase.auth.signUp({ 
-        email: systemEmail, 
-        password: password,
+        email, 
+        password,
         options: {
-          data: { email_asli: email, username: formatUsername }
+          // Otomatis mengambil kata sebelum '@' sebagai nama profil (Contoh: budi@gmail.com -> budi)
+          data: { username: email.split('@')[0] } 
         }
       })
+      
       if (error) {
-        setErrorMsg(`Gagal: ${error.message}`)
+        setErrorMsg(`Gagal mendaftar: ${error.message}`)
       } else {
-        await supabase.auth.signOut()
-        setSuccessMsg('Akun berhasil dibuat! Silakan masuk.')
-        setIsLogin(true) 
-        setPassword('') 
-        setEmail('')
+        // Keluar otomatis setelah daftar agar user harus login manual
+        await supabase.auth.signOut() 
+        setSuccessMsg('Akun berhasil dibuat! Silakan masuk menggunakan email tersebut.')
+        setIsLogin(true) // Kembalikan tampilan ke mode Login
+        setPassword('') // Kosongkan password demi keamanan
       }
-      setLoading(false)
     }
+    setLoading(false)
   }
 
   return (
-    <div className="relative flex min-h-screen w-full font-sans bg-white overflow-hidden">
+    <div className="flex min-h-screen w-full bg-white font-sans overflow-hidden">
       
-      {/* BACKGROUND DIAGONAL KANAN (Biru Dongker Resmi) */}
-      <div 
-        className="hidden md:block absolute inset-0 bg-[#0c3966] z-0"
-        style={{ clipPath: 'polygon(50% 0, 100% 0, 100% 100%, 35% 100%)' }}
-      ></div>
-
-      {/* BACKGROUND MOBILE */}
-      <div 
-        className="md:hidden absolute inset-0 bg-[#0c3966] z-0 top-[35%]"
-        style={{ clipPath: 'polygon(0 15%, 100% 0, 100% 100%, 0 100%)' }}
-      ></div>
-
-      <div className="relative z-10 flex flex-col md:flex-row w-full min-h-screen">
-        
-        {/* SISI KIRI: Branding (Sekarang Rata Tengah & Proporsional) */}
-        <div className="w-full md:w-1/2 flex flex-col justify-center items-center text-center p-8 md:pr-16 lg:pr-32 h-[40vh] md:h-screen">
-          <img 
-            src="/g-access-simbol.png" 
-            alt="Logo G-Access" 
-            className="w-28 md:w-32 lg:w-40 mb-8 object-contain drop-shadow-xl hover:scale-105 transition-transform duration-500" 
-          />
-          
-          <h1 className="text-4xl lg:text-5xl font-black text-[#0c3966] tracking-widest uppercase mb-3">
-            G-Inventory
-          </h1>
-          
-          <p className="text-slate-500 text-xs lg:text-sm font-bold tracking-[0.2em] uppercase mb-12">
-            Manajemen Inventaris & Stok Gudang
-          </p>
-          
-          {/* Info PT dengan Aksen Garis Cyan */}
-          <div className="flex flex-col items-center mt-2">
-            <div className="w-12 h-1 bg-[#01BFD7] rounded-full mb-5"></div>
-            <h2 className="text-xs lg:text-sm font-extrabold text-[#0c3966] uppercase tracking-[0.2em]">
-              PT. Gayatri Lintas Nusantara
-            </h2>
-            <p className="text-[10px] lg:text-xs text-[#01BFD7] font-bold uppercase tracking-[0.3em] mt-2">
-              POP Pacitan
-            </p>
+      {/* SISI KIRI - LOGO & INFORMASI (Sesuai Desain Baru) */}
+      <div className="hidden md:flex w-full md:w-[55%] flex-col items-center justify-center p-8 z-10 relative">
+        <div className="flex flex-col items-center text-center">
+          <div className="mb-6">
+            <img 
+              src="/logo.png" 
+              alt="G-Access Logo" 
+              className="w-48 h-auto object-contain drop-shadow-lg"
+              onError={(e) => { e.currentTarget.style.display = 'none'; document.getElementById('logo-text')!.style.display = 'block'; }}
+            />
+            <h1 id="logo-text" className="hidden font-extrabold text-5xl tracking-wider text-[#01BFD7]">G-ACCESS</h1>
           </div>
+
+          <h1 className="text-4xl font-black text-[#122A45] tracking-widest mb-3">G-INVENTORY</h1>
+          <p className="text-sm font-bold text-slate-400 tracking-widest mb-8">MANAJEMEN INVENTARIS & STOK GUDANG</p>
+          
+          <div className="w-12 h-1 bg-[#01BFD7] mb-8"></div>
+
+          <h2 className="text-sm font-black text-[#122A45] tracking-widest">PT. GAYATRI LINTAS NUSANTARA</h2>
+          <p className="text-[11px] font-bold text-[#01BFD7] tracking-widest mt-2">POP PACITAN</p>
         </div>
-
-        {/* SISI KANAN: Form Login Formal */}
-        <div className="w-full md:w-1/2 flex justify-center items-center p-8 md:pr-16 lg:pr-32 h-[60vh] md:h-screen">
-          <div className="w-full max-w-sm">
-            
-            {errorMsg && <div className="bg-rose-500/20 text-rose-100 text-sm font-medium p-3 rounded mb-6 border border-rose-500/30">{errorMsg}</div>}
-            {successMsg && <div className="bg-emerald-500/20 text-emerald-100 text-sm font-medium p-3 rounded mb-6 border border-emerald-500/30">{successMsg}</div>}
-
-            <form onSubmit={handleSubmit} className="w-full">
-              <div className="mb-5">
-                <label className="block text-white text-xs font-medium mb-2 uppercase tracking-wide">
-                  Username
-                </label>
-                <input 
-                  type="text" 
-                  required
-                  placeholder="Masukkan username"
-                  className="w-full bg-white text-slate-800 px-4 py-3.5 rounded outline-none focus:ring-2 focus:ring-[#01BFD7] text-sm font-medium transition-all"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                />
-              </div>
-
-              {!isLogin && (
-                <div className="mb-5">
-                  <label className="block text-white text-xs font-medium mb-2 uppercase tracking-wide">
-                    Email Asli
-                  </label>
-                  <input 
-                    type="email" 
-                    required
-                    placeholder="nama@email.com"
-                    className="w-full bg-white text-slate-800 px-4 py-3.5 rounded outline-none focus:ring-2 focus:ring-[#01BFD7] text-sm font-medium transition-all"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                  />
-                </div>
-              )}
-
-              <div className="mb-6">
-                <label className="block text-white text-xs font-medium mb-2 uppercase tracking-wide">
-                  Kata Sandi
-                </label>
-                <input 
-                  type="password" 
-                  required
-                  placeholder="••••••••"
-                  className="w-full bg-white text-slate-800 px-4 py-3.5 rounded outline-none focus:ring-2 focus:ring-[#01BFD7] text-sm font-medium transition-all"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                />
-              </div>
-
-              <div className="flex justify-between items-center mb-8 text-xs font-medium">
-                <div className="text-slate-300">
-                  {isLogin ? 'Belum punya akun?' : 'Sudah punya akses?'}
-                </div>
-                <button 
-                  type="button" 
-                  onClick={() => {
-                    setIsLogin(!isLogin)
-                    setErrorMsg('')
-                    setSuccessMsg('')
-                  }}
-                  className="text-[#01BFD7] hover:text-white transition"
-                >
-                  {isLogin ? 'Daftar sekarang' : 'Masuk sekarang'}
-                </button>
-              </div>
-
-              <button 
-                type="submit" 
-                disabled={loading}
-                className="w-full bg-[#01BFD7] hover:bg-cyan-400 text-[#0c3966] font-bold py-3.5 rounded text-sm tracking-widest uppercase transition-colors disabled:opacity-70 shadow-lg shadow-[#01BFD7]/20"
-              >
-                {loading ? 'MEMPROSES...' : (isLogin ? 'MASUK' : 'DAFTAR')}
-              </button>
-            </form>
-
-          </div>
-        </div>
-        
       </div>
+
+      {/* SISI KANAN - FORM LOGIN / DAFTAR (Warna Biru Dongker & Miring) */}
+      <div 
+        className="w-full md:w-[55%] bg-[#122A45] flex items-center justify-center p-8 md:p-16 relative md:-ml-[10%] z-20 md:[clip-path:polygon(15%_0,100%_0,100%_100%,0%_100%)]"
+      >
+        <div className="w-full max-w-sm md:pl-12">
+          
+          <form onSubmit={handleSubmit} className="space-y-6">
+            
+            {/* Pesan Notifikasi Sukses/Gagal */}
+            {errorMsg && <div className="bg-red-500/20 border border-red-500/50 text-red-100 p-3 rounded-lg text-sm font-semibold">{errorMsg}</div>}
+            {successMsg && <div className="bg-emerald-500/20 border border-emerald-500/50 text-emerald-100 p-3 rounded-lg text-sm font-semibold">{successMsg}</div>}
+
+            {/* Kolom EMAIL */}
+            <div>
+              <label className="block text-[11px] font-bold text-white tracking-wider mb-2">EMAIL</label>
+              <input 
+                type="email" 
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="contoh@office.com"
+                className="w-full bg-[#EEF2F6] text-[#122A45] px-4 py-3 rounded-md outline-none focus:ring-2 focus:ring-[#01BFD7] font-medium"
+              />
+            </div>
+
+            {/* Kolom KATA SANDI */}
+            <div>
+              <label className="block text-[11px] font-bold text-white tracking-wider mb-2">KATA SANDI</label>
+              <input 
+                type="password"
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••"
+                className="w-full bg-[#EEF2F6] text-[#122A45] px-4 py-3 rounded-md outline-none focus:ring-2 focus:ring-[#01BFD7] font-medium"
+              />
+            </div>
+
+            {/* Tombol Ganti Mode (Daftar / Masuk) */}
+            <div className="flex justify-between items-center pt-2">
+              <span className="text-xs text-slate-300">
+                {isLogin ? 'Belum punya akun?' : 'Sudah punya akun?'}
+              </span>
+              <button 
+                type="button" 
+                onClick={() => {
+                  setIsLogin(!isLogin)
+                  setErrorMsg('')
+                  setSuccessMsg('')
+                }}
+                className="text-xs text-[#01BFD7] hover:text-white transition font-semibold"
+              >
+                {isLogin ? 'Daftar sekarang' : 'Masuk di sini'}
+              </button>
+            </div>
+
+            {/* Tombol Submit Form */}
+            <button 
+              type="submit" 
+              disabled={loading}
+              className="w-full bg-[#01BFD7] hover:bg-[#00a8bd] text-white font-bold py-3.5 rounded-md transition tracking-wider mt-4 disabled:opacity-50"
+            >
+              {loading ? 'MEMPROSES...' : (isLogin ? 'MASUK' : 'DAFTAR')}
+            </button>
+
+          </form>
+        </div>
+      </div>
+
     </div>
   )
 }

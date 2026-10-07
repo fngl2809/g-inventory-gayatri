@@ -7,6 +7,7 @@ import StokMinimum from './StokMinimum'
 import Laporan from './Laporan'
 import Login from './Login'
 import InventarisServer from './InventarisServer'
+import KelolaAkun from './KelolaAkun'
 
 export default function App() {
   const [activeMenu, setActiveMenu] = useState('dashboard')
@@ -14,10 +15,42 @@ export default function App() {
   const [showProfileMenu, setShowProfileMenu] = useState(false)
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
 
+  // ==========================================
+  // STATE UNTUK NAMA ASLI & PANGKAT DARI TABEL
+  // ==========================================
+  const [userRole, setUserRole] = useState('user') 
+  const [userName, setUserName] = useState('Pengguna')
+
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => setSession(session))
-    supabase.auth.onAuthStateChange((_event, session) => setSession(session))
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session)
+      if (session?.user?.email) cekDataPengguna(session.user.email)
+    })
+    supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session)
+      if (session?.user?.email) cekDataPengguna(session.user.email)
+    })
   }, [])
+
+  // ==========================================
+  // FUNGSI SINKRONISASI KE TABEL data_pengguna
+  // ==========================================
+  const cekDataPengguna = async (email: string) => {
+    const { data, error } = await supabase
+      .from('data_pengguna')
+      .select('nama, role')
+      .eq('email', email)
+      .single()
+    
+    if (data) {
+      setUserName(data.nama) // Mengambil nama asli (Contoh: sugeng riadi)
+      setUserRole(data.role) // Mengambil role (superadmin, admin, user)
+    } else {
+      // Fallback jika email tidak ditemukan di tabel data_pengguna
+      setUserName(email.split('@')[0])
+      setUserRole('user')
+    }
+  }
 
   const handleLogout = async () => {
     if(window.confirm('Yakin ingin keluar dari sistem?')) await supabase.auth.signOut()
@@ -25,10 +58,11 @@ export default function App() {
 
   const handleDeleteAccount = () => {
     if(window.confirm('PERINGATAN: Yakin ingin menghapus akun ini?')) {
-      alert('Sistem: Untuk menjaga riwayat transaksi gudang, penghapusan akun Admin hanya bisa dilakukan melalui Dashboard Supabase oleh Super Admin.')
+      alert('Sistem: Untuk menjaga riwayat transaksi gudang, penghapusan akun hanya bisa dilakukan oleh Super Admin.')
     }
   }
 
+  // State untuk Dashboard
   const [stats, setStats] = useState({ totalJenis: 0, totalStok: 0, totalMasuk: 0, totalKeluar: 0 })
   const [kategoriStats, setKategoriStats] = useState<any>({})
   const [stokMenipis, setStokMenipis] = useState<any[]>([])
@@ -98,6 +132,7 @@ export default function App() {
     setIsLoading(false)
   }
 
+  // Grafik Kategori
   const colorsHex = ['#01BFD7', '#46FF23', '#FBBF24', '#FB7185', '#A855F7', '#94A3B8']
   const totalKategoriItems = Object.values(kategoriStats).reduce((a: any, b: any) => a + b, 0) as number
   let currentPercent = 0
@@ -110,8 +145,7 @@ export default function App() {
     return `${colorsHex[idx % colorsHex.length]} ${start}% ${end}%`
   }).join(', ')
 
-  const activeUsername = session?.user?.user_metadata?.username || 'Admin'
-  const inisial = activeUsername.substring(0, 2).toUpperCase()
+  const inisial = userName.substring(0, 2).toUpperCase()
 
   const handleMenuClick = (menu: string) => {
     setActiveMenu(menu)
@@ -151,40 +185,38 @@ export default function App() {
 
               <nav className="p-4 space-y-1.5 text-sm font-medium flex-1 overflow-y-auto">
                 <button onClick={() => handleMenuClick('dashboard')} className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl transition ${activeMenu === 'dashboard' ? 'bg-[#01BFD7] text-white' : 'text-slate-300 hover:bg-white/10'}`}>
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg> 
-                  Dashboard
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg> Dashboard
                 </button>
-                
                 <button onClick={() => handleMenuClick('barang')} className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl transition ${activeMenu === 'barang' ? 'bg-[#01BFD7] text-white' : 'text-slate-300 hover:bg-white/10'}`}>
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg> 
-                  Data Barang
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg> Data Barang
                 </button>
-
-                {/* MENU INVENTARIS SERVER BARU */}
                 <button onClick={() => handleMenuClick('server')} className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl transition ${activeMenu === 'server' ? 'bg-[#01BFD7] text-white' : 'text-slate-300 hover:bg-white/10'}`}>
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect><rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect><line x1="6" y1="6" x2="6.01" y2="6"></line><line x1="6" y1="18" x2="6.01" y2="18"></line></svg> 
-                  Inventaris Server
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect><rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect><line x1="6" y1="6" x2="6.01" y2="6"></line><line x1="6" y1="18" x2="6.01" y2="18"></line></svg> Inventaris Server
                 </button>
-
                 <button onClick={() => handleMenuClick('masuk')} className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl transition ${activeMenu === 'masuk' ? 'bg-[#01BFD7] text-white' : 'text-slate-300 hover:bg-white/10'}`}>
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg> 
-                  Barang Masuk
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg> Barang Masuk
                 </button>
-
                 <button onClick={() => handleMenuClick('keluar')} className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl transition ${activeMenu === 'keluar' ? 'bg-[#01BFD7] text-white' : 'text-slate-300 hover:bg-white/10'}`}>
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg> 
-                  Barang Keluar
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg> Barang Keluar
                 </button>
-
                 <button onClick={() => handleMenuClick('minimum')} className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl transition ${activeMenu === 'minimum' ? 'bg-[#01BFD7] text-white' : 'text-slate-300 hover:bg-white/10'}`}>
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg> 
-                  Stok Minimum
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg> Stok Minimum
+                </button>
+                <button onClick={() => handleMenuClick('laporan')} className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl transition ${activeMenu === 'laporan' ? 'bg-[#01BFD7] text-white' : 'text-slate-300 hover:bg-white/10'}`}>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg> Laporan
                 </button>
 
-                <button onClick={() => handleMenuClick('laporan')} className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl transition ${activeMenu === 'laporan' ? 'bg-[#01BFD7] text-white' : 'text-slate-300 hover:bg-white/10'}`}>
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg> 
-                  Laporan
-                </button>
+                {/* MENU KHUSUS SUPER ADMIN */}
+                {userRole === 'superadmin' && (
+                  <>
+                    <div className="border-t border-white/10 my-2 pt-2"></div>
+                    <button onClick={() => handleMenuClick('kelola_akun')} className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl transition ${activeMenu === 'kelola_akun' ? 'bg-amber-500 text-white shadow-md shadow-amber-500/20' : 'text-amber-400 hover:bg-white/10'}`}>
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg> 
+                      Kelola Akun
+                    </button>
+                  </>
+                )}
+
               </nav>
 
               <div className="p-4 border-t border-white/10">
@@ -205,17 +237,35 @@ export default function App() {
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
                 </button>
                 <div>
-                  <h2 className="text-lg md:text-xl font-bold text-[#394059] capitalize">Hai, {activeUsername}</h2>
+                  <h2 className="text-lg md:text-xl font-bold text-[#394059] capitalize">Hai, {userName}</h2>
                   <p className="text-[10px] md:text-xs text-slate-400 hidden sm:block">Selamat datang di Sistem Informasi Stok Barang G-Access</p>
                 </div>
               </div>
               
               <div className="relative">
                 <button onClick={(e) => { e.stopPropagation(); setShowProfileMenu(!showProfileMenu); }} className="flex items-center gap-2 md:gap-3 hover:bg-slate-50 p-2 rounded-xl transition cursor-pointer">
-                  <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-[#01BFD7]/10 text-[#01BFD7] text-sm md:text-base font-bold flex items-center justify-center border border-[#01BFD7]/30 uppercase">{inisial}</div>
+                  
+                  {/* WARNA PROFIL MENYESUAIKAN PANGKAT */}
+                  <div className={`w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center border uppercase text-sm md:text-base font-bold ${
+                    userRole === 'superadmin' ? 'bg-amber-100 text-amber-600 border-amber-300' : 
+                    userRole === 'admin' ? 'bg-blue-100 text-blue-600 border-blue-300' : 
+                    'bg-[#01BFD7]/10 text-[#01BFD7] border-[#01BFD7]/30'
+                  }`}>
+                    {inisial}
+                  </div>
+                  
                   <div className="text-right hidden sm:block">
-                    <p className="text-sm font-semibold text-[#394059] leading-none capitalize">{activeUsername}</p>
-                    <span className="text-[11px] text-[#01BFD7]">Administrator</span>
+                    <p className="text-sm font-semibold text-[#394059] leading-none capitalize">{userName}</p>
+                    
+                    {/* LABEL PANGKAT */}
+                    <span className={`text-[11px] font-bold uppercase tracking-wider ${
+                      userRole === 'superadmin' ? 'text-amber-500' : 
+                      userRole === 'admin' ? 'text-blue-500' : 
+                      'text-[#01BFD7]'
+                    }`}>
+                      {userRole === 'superadmin' ? 'Super Admin' : userRole === 'admin' ? 'Admin' : 'Teknisi / User'}
+                    </span>
+
                   </div>
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-slate-400"><path d="m6 9 6 6 6-6"/></svg>
                 </button>
@@ -230,7 +280,7 @@ export default function App() {
               </div>
             </header>
 
-            {/* DASHBOARD */}
+            {/* DASHBOARD KONTEN */}
             {activeMenu === 'dashboard' && (
               <div className="p-4 md:p-8 space-y-6">
                 {isLoading ? (
@@ -244,7 +294,7 @@ export default function App() {
                         </div>
                         <div>
                           <span className="text-[10px] md:text-xs font-bold text-[#01BFD7] uppercase tracking-wider block">Total Jenis</span>
-                          <div className="flex items-baseline gap-1 mt-1"><span className="text-xl md:text-2xl font-black text-[#394059]">{stats.totalJenis}</span><span className="text-[10px] md:text-xs font-semibold text-slate-400">jenis</span></div>
+                          <div className="flex items-baseline gap-1 mt-1"><span className="text-xl md:text-2xl font-black text-[#394059]">{stats.totalJenis}</span></div>
                         </div>
                       </div>
                       <div className="bg-white rounded-2xl p-4 md:p-5 border border-slate-100 shadow-sm flex flex-col md:flex-row items-start md:items-center gap-3 md:gap-4 hover:shadow-md transition">
@@ -252,8 +302,8 @@ export default function App() {
                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
                         </div>
                         <div>
-                          <span className="text-[10px] md:text-xs font-bold text-[#394059] uppercase tracking-wider block">Stok Tersedia</span>
-                          <div className="flex items-baseline gap-1 mt-1"><span className="text-xl md:text-2xl font-black text-[#394059]">{stats.totalStok}</span><span className="text-[10px] md:text-xs font-semibold text-slate-400">unit</span></div>
+                          <span className="text-[10px] md:text-xs font-bold text-[#394059] uppercase tracking-wider block">Total Barang</span>
+                          <div className="flex items-baseline gap-1 mt-1"><span className="text-xl md:text-2xl font-black text-[#394059]">{stats.totalStok}</span></div>
                         </div>
                       </div>
                       <div className="bg-white rounded-2xl p-4 md:p-5 border border-slate-100 shadow-sm flex flex-col md:flex-row items-start md:items-center gap-3 md:gap-4 hover:shadow-md transition">
@@ -262,7 +312,7 @@ export default function App() {
                         </div>
                         <div>
                           <span className="text-[10px] md:text-xs font-bold text-amber-600 uppercase tracking-wider block">Barang Masuk</span>
-                          <div className="flex items-baseline gap-1 mt-1"><span className="text-xl md:text-2xl font-black text-[#394059]">{stats.totalMasuk}</span><span className="text-[10px] md:text-xs font-semibold text-slate-400">unit</span></div>
+                          <div className="flex items-baseline gap-1 mt-1"><span className="text-xl md:text-2xl font-black text-[#394059]">{stats.totalMasuk}</span></div>
                         </div>
                       </div>
                       <div className="bg-white rounded-2xl p-4 md:p-5 border border-slate-100 shadow-sm flex flex-col md:flex-row items-start md:items-center gap-3 md:gap-4 hover:shadow-md transition">
@@ -271,7 +321,7 @@ export default function App() {
                         </div>
                         <div>
                           <span className="text-[10px] md:text-xs font-bold text-rose-600 uppercase tracking-wider block">Barang Keluar</span>
-                          <div className="flex items-baseline gap-1 mt-1"><span className="text-xl md:text-2xl font-black text-[#394059]">{stats.totalKeluar}</span><span className="text-[10px] md:text-xs font-semibold text-slate-400">unit</span></div>
+                          <div className="flex items-baseline gap-1 mt-1"><span className="text-xl md:text-2xl font-black text-[#394059]">{stats.totalKeluar}</span></div>
                         </div>
                       </div>
                     </div>
@@ -378,13 +428,20 @@ export default function App() {
               </div>
             )}
 
-            {/* NAVIGASI MENU LAINNYA */}
+            {/* HALAMAN MANAJEMEN AKUN */}
+            {activeMenu === 'kelola_akun' && userRole === 'superadmin' && (
+              <div className="p-4 md:p-8 space-y-6">
+                <KelolaAkun />
+              </div>
+            )}
+
+            {/* Menu Lainnya */}
             {activeMenu === 'barang' && <DataBarang />}
-            {activeMenu === 'server' && <InventarisServer />}
             {activeMenu === 'masuk' && <BarangMasuk />}
             {activeMenu === 'keluar' && <BarangKeluar />}
             {activeMenu === 'minimum' && <StokMinimum />}
             {activeMenu === 'laporan' && <Laporan />}
+            {activeMenu === 'server' && <InventarisServer />}
 
           </main>
         </div>
