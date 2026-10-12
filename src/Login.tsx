@@ -1,152 +1,209 @@
 import { useState } from 'react'
 import { supabase } from './supabase'
 
-interface LoginProps {
-  onLoginSuccess: () => void
-}
-
-export default function Login({ onLoginSuccess }: LoginProps) {
-  // State untuk mengatur mode Login atau Daftar
-  const [isLogin, setIsLogin] = useState(true)
-  
-  // State khusus Email & Password (Username dihapus karena sudah pakai email murni)
+export default function Login({ onLoginSuccess }: { onLoginSuccess: () => void }) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  
+  const [isRegister, setIsRegister] = useState(false)
   const [loading, setLoading] = useState(false)
-  const [errorMsg, setErrorMsg] = useState('')
-  const [successMsg, setSuccessMsg] = useState('')
+  const [error, setError] = useState<string | null>(null)
+  
+  // State untuk Data Pengguna (Hanya saat Register)
+  const [nama, setNama] = useState('')
+  const [role, setRole] = useState('user')
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
-    setErrorMsg('')
-    setSuccessMsg('')
+    setError(null)
 
-    if (isLogin) {
-      // PROSES LOGIN
-      const { error } = await supabase.auth.signInWithPassword({ email, password })
-      if (error) {
-        setErrorMsg('Login gagal: Email atau kata sandi salah.')
+    try {
+      if (isRegister) {
+        // PROSES REGISTER
+        const { data, error: authError } = await supabase.auth.signUp({
+          email,
+          password,
+        })
+        
+        if (authError) throw authError
+
+        if (data.user) {
+          const { error: dbError } = await supabase
+            .from('data_pengguna')
+            .insert([
+              { 
+                id_user: data.user.id,
+                email: email,
+                nama: nama,
+                role: role
+              }
+            ])
+            
+          if (dbError) throw dbError
+          
+          alert('Pendaftaran berhasil! Silakan login.')
+          setIsRegister(false) // Kembali ke mode login
+        }
       } else {
+        // PROSES LOGIN
+        const { error: authError } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        })
+        if (authError) throw authError
+        
         onLoginSuccess()
       }
-    } else {
-      // PROSES DAFTAR AKUN BARU
-      const { error } = await supabase.auth.signUp({ 
-        email, 
-        password,
-        options: {
-          // Otomatis mengambil kata sebelum '@' sebagai nama profil (Contoh: budi@gmail.com -> budi)
-          data: { username: email.split('@')[0] } 
-        }
-      })
-      
-      if (error) {
-        setErrorMsg(`Gagal mendaftar: ${error.message}`)
-      } else {
-        // Keluar otomatis setelah daftar agar user harus login manual
-        await supabase.auth.signOut() 
-        setSuccessMsg('Akun berhasil dibuat! Silakan masuk menggunakan email tersebut.')
-        setIsLogin(true) // Kembalikan tampilan ke mode Login
-        setPassword('') // Kosongkan password demi keamanan
-      }
+    } catch (err: any) {
+      setError(err.message || 'Terjadi kesalahan.')
+    } finally {
+      setLoading(false)
     }
-    setLoading(false)
   }
 
   return (
-    <div className="flex min-h-screen w-full bg-white font-sans overflow-hidden">
+    <div className="flex h-screen bg-[#1E2536] font-sans">
       
-      {/* SISI KIRI - LOGO & INFORMASI (Sesuai Desain Baru) */}
-      <div className="hidden md:flex w-full md:w-[55%] flex-col items-center justify-center p-8 z-10 relative">
-        <div className="flex flex-col items-center text-center">
-          <div className="mb-6">
-            <img 
-              src="/logo.png" 
-              alt="G-Access Logo" 
-              className="w-48 h-auto object-contain drop-shadow-lg"
-              onError={(e) => { e.currentTarget.style.display = 'none'; document.getElementById('logo-text')!.style.display = 'block'; }}
-            />
-            <h1 id="logo-text" className="hidden font-extrabold text-5xl tracking-wider text-[#01BFD7]">G-ACCESS</h1>
-          </div>
-
-          <h1 className="text-4xl font-black text-[#122A45] tracking-widest mb-3">G-INVENTORY</h1>
-          <p className="text-sm font-bold text-slate-400 tracking-widest mb-8">MANAJEMEN INVENTARIS & STOK GUDANG</p>
+      {/* BAGIAN KIRI: BRANDING & LOGO (Sekarang Dark Mode supaya logo putih terlihat) */}
+      <div className="hidden lg:flex w-[55%] flex-col justify-center items-center relative overflow-hidden bg-[#2C344A]">
+        {/* Dekorasi Background */}
+        <div className="absolute top-[-10%] left-[-10%] w-96 h-96 bg-[#01BFD7] rounded-full mix-blend-multiply filter blur-[100px] opacity-20"></div>
+        <div className="absolute bottom-[-10%] right-[-10%] w-96 h-96 bg-emerald-500 rounded-full mix-blend-multiply filter blur-[100px] opacity-20"></div>
+        
+        <div className="z-10 flex flex-col items-center text-center px-10">
+          <img 
+            src="/logo.png" 
+            alt="Logo G-Access" 
+            className="w-72 h-auto object-contain drop-shadow-2xl mb-6 transition-transform hover:scale-105" 
+            onError={(e) => { 
+              e.currentTarget.style.display = 'none'; 
+              document.getElementById('fallback-text-login')!.style.display = 'block'; 
+            }} 
+          />
+          <h1 id="fallback-text-login" className="hidden font-extrabold text-5xl tracking-wider text-[#01BFD7] mb-6 drop-shadow-lg">G-ACCESS</h1>
           
-          <div className="w-12 h-1 bg-[#01BFD7] mb-8"></div>
-
-          <h2 className="text-sm font-black text-[#122A45] tracking-widest">PT. GAYATRI LINTAS NUSANTARA</h2>
-          <p className="text-[11px] font-bold text-[#01BFD7] tracking-widest mt-2">POP PACITAN</p>
+          <h1 className="font-black text-4xl text-white tracking-widest uppercase mb-3 drop-shadow-md">G-Inventory</h1>
+          <p className="font-medium text-sm text-slate-400 tracking-[0.2em] uppercase mb-8">Manajemen Inventaris & Stok Gudang</p>
+          
+          <div className="w-16 h-1 bg-[#01BFD7] rounded-full mb-8"></div>
+          
+          <h2 className="font-black text-lg text-white tracking-widest uppercase leading-tight drop-shadow-sm">PT. Gayatri Lintas Nusantara</h2>
+          <p className="text-xs font-bold text-[#01BFD7] tracking-widest uppercase mt-2">POP Pacitan</p>
         </div>
       </div>
 
-      {/* SISI KANAN - FORM LOGIN / DAFTAR (Warna Biru Dongker & Miring) */}
-      <div 
-        className="w-full md:w-[55%] bg-[#122A45] flex items-center justify-center p-8 md:p-16 relative md:-ml-[10%] z-20 md:[clip-path:polygon(15%_0,100%_0,100%_100%,0%_100%)]"
-      >
-        <div className="w-full max-w-sm md:pl-12">
+      {/* BAGIAN KANAN: FORM LOGIN/REGISTER */}
+      <div className="w-full lg:w-[45%] bg-[#394059] flex flex-col justify-center px-8 sm:px-16 md:px-24 shadow-[-20px_0_40px_rgba(0,0,0,0.2)] z-20 relative">
+        <div className="w-full max-w-sm mx-auto">
           
-          <form onSubmit={handleSubmit} className="space-y-6">
-            
-            {/* Pesan Notifikasi Sukses/Gagal */}
-            {errorMsg && <div className="bg-red-500/20 border border-red-500/50 text-red-100 p-3 rounded-lg text-sm font-semibold">{errorMsg}</div>}
-            {successMsg && <div className="bg-emerald-500/20 border border-emerald-500/50 text-emerald-100 p-3 rounded-lg text-sm font-semibold">{successMsg}</div>}
+          {/* Header Form */}
+          <div className="mb-10 text-center lg:text-left">
+            <h2 className="text-3xl font-black text-white mb-2">{isRegister ? 'Buat Akun Baru' : 'Selamat Datang'}</h2>
+            <p className="text-slate-400 text-sm font-medium">
+              {isRegister ? 'Daftarkan data diri Anda untuk mengakses sistem.' : 'Silakan masuk menggunakan akun Anda.'}
+            </p>
+          </div>
 
-            {/* Kolom EMAIL */}
-            <div>
-              <label className="block text-[11px] font-bold text-white tracking-wider mb-2">EMAIL</label>
-              <input 
-                type="email" 
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="contoh@office.com"
-                className="w-full bg-[#EEF2F6] text-[#122A45] px-4 py-3 rounded-md outline-none focus:ring-2 focus:ring-[#01BFD7] font-medium"
-              />
+          {error && (
+            <div className="bg-rose-500/10 border border-rose-500/50 text-rose-400 text-xs font-bold p-4 rounded-xl mb-6 flex items-start gap-3">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="shrink-0"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+              <span>{error}</span>
+            </div>
+          )}
+
+          <form onSubmit={handleAuth} className="space-y-5">
+            {isRegister && (
+              <>
+                <div className="space-y-1.5">
+                  <label className="text-[11px] font-extrabold text-slate-300 uppercase tracking-wider">Nama Lengkap</label>
+                  <div className="relative">
+                    <span className="absolute left-4 top-3.5 text-slate-400">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                    </span>
+                    <input 
+                      type="text" 
+                      required
+                      placeholder="Masukkan nama Anda"
+                      className="w-full bg-[#2C344A] border border-white/10 text-white rounded-xl pl-12 pr-4 py-3 outline-none focus:border-[#01BFD7] focus:ring-1 focus:ring-[#01BFD7] transition-all text-sm font-medium placeholder-slate-500"
+                      value={nama} onChange={(e) => setNama(e.target.value)} 
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-[11px] font-extrabold text-slate-300 uppercase tracking-wider">Role / Jabatan</label>
+                  <div className="relative">
+                    <span className="absolute left-4 top-3.5 text-slate-400">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                    </span>
+                    <select 
+                      className="w-full bg-[#2C344A] border border-white/10 text-white rounded-xl pl-12 pr-4 py-3 outline-none focus:border-[#01BFD7] focus:ring-1 focus:ring-[#01BFD7] transition-all text-sm font-medium cursor-pointer appearance-none"
+                      value={role} onChange={(e) => setRole(e.target.value)}
+                    >
+                      <option value="user">Teknisi / User</option>
+                      <option value="admin">Admin</option>
+                      <option value="superadmin">Super Admin</option>
+                    </select>
+                  </div>
+                </div>
+              </>
+            )}
+
+            <div className="space-y-1.5">
+              <label className="text-[11px] font-extrabold text-slate-300 uppercase tracking-wider">Email Office</label>
+              <div className="relative">
+                <span className="absolute left-4 top-3.5 text-slate-400">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+                </span>
+                <input 
+                  type="email" 
+                  required
+                  placeholder="admin@gayatri.com"
+                  className="w-full bg-[#2C344A] border border-white/10 text-white rounded-xl pl-12 pr-4 py-3 outline-none focus:border-[#01BFD7] focus:ring-1 focus:ring-[#01BFD7] transition-all text-sm font-medium placeholder-slate-500"
+                  value={email} onChange={(e) => setEmail(e.target.value)} 
+                />
+              </div>
             </div>
 
-            {/* Kolom KATA SANDI */}
-            <div>
-              <label className="block text-[11px] font-bold text-white tracking-wider mb-2">KATA SANDI</label>
-              <input 
-                type="password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-                className="w-full bg-[#EEF2F6] text-[#122A45] px-4 py-3 rounded-md outline-none focus:ring-2 focus:ring-[#01BFD7] font-medium"
-              />
+            <div className="space-y-1.5">
+              <div className="flex justify-between items-center">
+                <label className="text-[11px] font-extrabold text-slate-300 uppercase tracking-wider">Kata Sandi</label>
+              </div>
+              <div className="relative">
+                <span className="absolute left-4 top-3.5 text-slate-400">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                </span>
+                <input 
+                  type="password" 
+                  required
+                  placeholder="••••••••"
+                  className="w-full bg-[#2C344A] border border-white/10 text-white rounded-xl pl-12 pr-4 py-3 outline-none focus:border-[#01BFD7] focus:ring-1 focus:ring-[#01BFD7] transition-all text-sm font-medium placeholder-slate-500 tracking-widest"
+                  value={password} onChange={(e) => setPassword(e.target.value)} 
+                />
+              </div>
             </div>
 
-            {/* Tombol Ganti Mode (Daftar / Masuk) */}
-            <div className="flex justify-between items-center pt-2">
-              <span className="text-xs text-slate-300">
-                {isLogin ? 'Belum punya akun?' : 'Sudah punya akun?'}
-              </span>
-              <button 
-                type="button" 
-                onClick={() => {
-                  setIsLogin(!isLogin)
-                  setErrorMsg('')
-                  setSuccessMsg('')
-                }}
-                className="text-xs text-[#01BFD7] hover:text-white transition font-semibold"
-              >
-                {isLogin ? 'Daftar sekarang' : 'Masuk di sini'}
-              </button>
-            </div>
-
-            {/* Tombol Submit Form */}
             <button 
               type="submit" 
               disabled={loading}
-              className="w-full bg-[#01BFD7] hover:bg-[#00a8bd] text-white font-bold py-3.5 rounded-md transition tracking-wider mt-4 disabled:opacity-50"
+              className="w-full bg-[#01BFD7] text-white py-3.5 rounded-xl text-sm font-black uppercase tracking-wider hover:brightness-110 shadow-lg shadow-[#01BFD7]/20 transition-all mt-4 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {loading ? 'MEMPROSES...' : (isLogin ? 'MASUK' : 'DAFTAR')}
+              {loading ? (isRegister ? 'Mendaftarkan...' : 'Memverifikasi...') : (isRegister ? 'Daftar Sekarang' : 'Masuk Ke Sistem')}
             </button>
-
           </form>
+
+          <div className="mt-8 pt-6 border-t border-white/10 text-center">
+            <p className="text-sm font-medium text-slate-400">
+              {isRegister ? 'Sudah memiliki akun? ' : 'Belum memiliki akun? '}
+              <button 
+                onClick={() => { setIsRegister(!isRegister); setError(null); }} 
+                className="text-[#01BFD7] font-bold hover:underline"
+              >
+                {isRegister ? 'Masuk di sini' : 'Daftar sekarang'}
+              </button>
+            </p>
+          </div>
+          
         </div>
       </div>
 
