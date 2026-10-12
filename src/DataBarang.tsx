@@ -8,9 +8,11 @@ export default function DataBarang() {
 
   const [showForm, setShowForm] = useState(false)
   const [editId, setEditId] = useState<number | null>(null)
-  const [formData, setFormData] = useState({
+  
+  // State kita ubah agar bisa menerima string kosong ('') supaya tidak mentok di 0
+  const [formData, setFormData] = useState<any>({
     kode_barang: '', nama_barang: '', kategori: '', 
-    stok: 0, stok_minimum: 5, satuan: 'pcs', lokasi: ''
+    stok: '', stok_minimum: '', satuan: 'pcs', lokasi: ''
   })
 
   useEffect(() => {
@@ -26,10 +28,26 @@ export default function DataBarang() {
 
   const handleSimpan = async (e: React.FormEvent) => {
     e.preventDefault()
+
+    // Memastikan jika kolom masih kosong, sistem otomatis mengubahnya jadi 0 atau 5
+    const dataDisimpan = {
+      ...formData,
+      stok: formData.stok === '' ? 0 : Number(formData.stok),
+      stok_minimum: formData.stok_minimum === '' ? 5 : Number(formData.stok_minimum)
+    }
+
     if (editId) {
-      await supabase.from('barangs').update(formData).eq('id', editId)
+      await supabase.from('barangs').update({
+        kode_barang: dataDisimpan.kode_barang,
+        nama_barang: dataDisimpan.nama_barang,
+        kategori: dataDisimpan.kategori,
+        stok: dataDisimpan.stok,
+        stok_minimum: dataDisimpan.stok_minimum,
+        satuan: dataDisimpan.satuan,
+        lokasi: dataDisimpan.lokasi
+      }).eq('id', editId)
     } else {
-      await supabase.from('barangs').insert([formData])
+      await supabase.from('barangs').insert([dataDisimpan])
     }
     setShowForm(false)
     setEditId(null)
@@ -84,7 +102,8 @@ export default function DataBarang() {
               <span><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="mr-2 inline-block"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg></span> PDF
             </button>
             <button 
-              onClick={() => { setFormData({ kode_barang: '', nama_barang: '', kategori: '', stok: 0, stok_minimum: 5, satuan: 'pcs', lokasi: '' }); setEditId(null); setShowForm(true); }}
+              // Ketika form dibuka, stok awal diset jadi kosong ('') bukan 0
+              onClick={() => { setFormData({ kode_barang: '', nama_barang: '', kategori: '', stok: '', stok_minimum: '', satuan: 'pcs', lokasi: '' }); setEditId(null); setShowForm(true); }}
               className="w-full sm:w-auto bg-[#01BFD7] text-white px-5 py-2.5 rounded-xl text-sm font-bold hover:brightness-95 shadow-md shadow-[#01BFD7]/30 transition"
             >
               + Tambah Barang
@@ -211,12 +230,27 @@ export default function DataBarang() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-bold text-[#394059] mb-1">Stok Awal</label>
-                  <input type="number" required min="0" className="w-full border border-slate-200 rounded-lg p-2.5 outline-none focus:border-[#01BFD7] text-sm" value={formData.stok} onChange={(e) => setFormData({...formData, stok: parseInt(e.target.value) || 0})} disabled={!!editId} />
-                  {editId && <span className="text-[10px] text-rose-500 mt-1 block">Stok hanya bisa diubah via menu Transaksi.</span>}
+                  {/* LOGIKA BARU: Izinkan empty string ('') agar nol bisa dihapus bersih */}
+                  <input 
+                    type="number" 
+                    required 
+                    min="0" 
+                    className="w-full border border-slate-200 rounded-lg p-2.5 outline-none focus:border-[#01BFD7] text-sm" 
+                    value={formData.stok} 
+                    onChange={(e) => setFormData({...formData, stok: e.target.value === '' ? '' : parseInt(e.target.value)})} 
+                  />
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-[#394059] mb-1">Batas Minimum Stok</label>
-                  <input type="number" required min="1" className="w-full border border-slate-200 rounded-lg p-2.5 outline-none focus:border-[#01BFD7] text-sm" value={formData.stok_minimum} onChange={(e) => setFormData({...formData, stok_minimum: parseInt(e.target.value) || 0})} />
+                  {/* LOGIKA BARU: Izinkan empty string ('') agar mudah diubah */}
+                  <input 
+                    type="number" 
+                    required 
+                    min="1" 
+                    className="w-full border border-slate-200 rounded-lg p-2.5 outline-none focus:border-[#01BFD7] text-sm" 
+                    value={formData.stok_minimum} 
+                    onChange={(e) => setFormData({...formData, stok_minimum: e.target.value === '' ? '' : parseInt(e.target.value)})} 
+                  />
                 </div>
               </div>
 
